@@ -2,6 +2,7 @@ package pe.edu.upeu.acopioleche.domain.model
 
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ProveedorAcopiadorTest {
 
@@ -30,7 +31,7 @@ class ProveedorAcopiadorTest {
             entregaDirectaEnPlanta = false,
         )
 
-        assert(proveedor.documento.isNotBlank())
+        assertTrue(proveedor.documento.isNotBlank())
     }
 
     @Test
@@ -54,6 +55,6 @@ class ProveedorAcopiadorTest {
             sectoresAsignados = listOf("Huata", "Chucuito"),
         )
 
-        assert(acopiador.sectoresAsignados.isNotEmpty())
+        assertTrue(acopiador.sectoresAsignados.isNotEmpty())
     }
 }

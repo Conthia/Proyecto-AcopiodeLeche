@@ -2,6 +2,7 @@ package pe.edu.upeu.acopioleche.domain.model
 
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ReunionAsistenciaTest {
 
@@ -30,7 +31,7 @@ class ReunionAsistenciaTest {
             horaFinMinutos = 600,
         )
 
-        assert(reunion.horaFinMinutos > reunion.horaInicioMinutos)
+        assertTrue(reunion.horaFinMinutos > reunion.horaInicioMinutos)
     }
 
     @Test
