@@ -22,6 +22,7 @@ import pe.edu.upeu.acopioleche.domain.model.SancionAplicada
 import pe.edu.upeu.acopioleche.domain.repository.EntregaRepository
 import pe.edu.upeu.acopioleche.domain.repository.LiquidacionRepository
 import pe.edu.upeu.acopioleche.domain.repository.NotificacionRepository
+import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
 import pe.edu.upeu.acopioleche.domain.repository.SancionRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
@@ -49,6 +50,7 @@ class LiquidacionesViewModel(
     private val sancionRepository: SancionRepository,
     private val liquidacionRepository: LiquidacionRepository,
     private val notificacionRepository: NotificacionRepository,
+    private val precioTemporadaRepository: PrecioTemporadaRepository,
 ) : AppViewModel(scope = scope) {
 
     private val semanaMostrada = CicloSemanal.inicioDeSemana(Clock.System.todayIn(TimeZone.currentSystemDefault()))
@@ -108,9 +110,18 @@ class LiquidacionesViewModel(
 
     private suspend fun cargar(generarSiFalta: Boolean, automatica: Boolean): List<LiquidacionResumen> {
         val proveedoresActivos = proveedorRepository.observarProveedores().first().filter { it.activo }
+        // Un solo precio para toda la semana (ver CalculadoraLiquidacion.fechaReferenciaPrecio):
+        // se consulta una sola vez por carga, no por proveedor, y solo si de verdad puede hacer
+        // falta para generar algo -- evita una lectura y un posible AppLogger.warn de más cuando
+        // todos los proveedores ya tienen su liquidación persistida.
+        val precioPorLitro = if (generarSiFalta) obtenerPrecioPorLitroDeLaSemana() else null
         return proveedoresActivos.map { proveedor ->
             val liquidacion = liquidacionRepository.buscar(proveedorId = proveedor.id, semanaInicio = semanaMostrada)
-                ?: if (generarSiFalta) generarPara(proveedorId = proveedor.id, automatica = automatica) else null
+                ?: if (generarSiFalta) {
+                    generarPara(proveedorId = proveedor.id, automatica = automatica, precioPorLitro = requireNotNull(precioPorLitro))
+                } else {
+                    null
+                }
             LiquidacionResumen(
                 proveedorId = proveedor.id,
                 nombreProveedor = proveedor.nombre,
@@ -122,7 +133,19 @@ class LiquidacionesViewModel(
         }
     }
 
-    private suspend fun generarPara(proveedorId: String, automatica: Boolean): Liquidacion {
+    private suspend fun obtenerPrecioPorLitroDeLaSemana(): Double {
+        val fechaReferencia = CalculadoraLiquidacion.fechaReferenciaPrecio(semanaMostrada)
+        val precioVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferencia)
+        if (precioVigente.esRespaldo) {
+            AppLogger.warn(
+                TAG,
+                "No hay PrecioTemporada vigente para $fechaReferencia; usando el respaldo S/ ${precioVigente.precioPorLitro}/L",
+            )
+        }
+        return precioVigente.precioPorLitro
+    }
+
+    private suspend fun generarPara(proveedorId: String, automatica: Boolean, precioPorLitro: Double): Liquidacion {
         val semanaFin = semanaMostrada.plus(6, DateTimeUnit.DAY)
         val entregasDeLaSemana = entregaRepository.observarEntregasDe(proveedorId).first().filter { entrega ->
             entrega.fecha in semanaMostrada..semanaFin && entrega.estado is EstadoEntrega.Aceptada
@@ -138,6 +161,7 @@ class LiquidacionesViewModel(
             proveedorId = proveedorId,
             semanaInicio = semanaMostrada,
             litrosAceptados = litrosAceptados,
+            precioPorLitroVigente = precioPorLitro,
             tieneSancionReduccionPendiente = tieneSancionPendiente,
             generadaAutomaticamente = automatica,
         )
