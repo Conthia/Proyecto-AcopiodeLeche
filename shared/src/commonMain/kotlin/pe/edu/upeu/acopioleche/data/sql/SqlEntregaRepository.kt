@@ -9,7 +9,6 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
@@ -20,6 +19,7 @@ import pe.edu.upeu.acopioleche.domain.model.EstadoEntrega
 import pe.edu.upeu.acopioleche.domain.model.MotivoRechazo
 import pe.edu.upeu.acopioleche.domain.model.Turno
 import pe.edu.upeu.acopioleche.domain.repository.EntregaRepository
+import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
 
 class SqlEntregaRepository(
     private val database: AcopioLecheDatabase,
@@ -56,14 +56,14 @@ class SqlEntregaRepository(
     override fun observarVolumenUltimaSemana(): Flow<List<Double>> = observarVolumenDeSemana()
 
     fun observarVolumenDeSemana(hoy: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())): Flow<List<Double>> {
-        val lunes = hoy.minus(hoy.dayOfWeek.ordinal, DateTimeUnit.DAY)
-        val domingo = lunes.plus(6, DateTimeUnit.DAY)
-        return queries.sumaVolumenPorFecha(lunes.toString(), domingo.toString())
+        val inicioCiclo = CicloSemanal.inicioDeSemana(hoy)
+        val finCiclo = inicioCiclo.plus(6, DateTimeUnit.DAY)
+        return queries.sumaVolumenPorFecha(inicioCiclo.toString(), finCiclo.toString())
             .asFlow()
             .mapToList(Dispatchers.Default)
             .map { filas ->
                 val totalesPorFecha = filas.associate { it.fecha to it.totalLitros }
-                (0..6).map { offset -> totalesPorFecha[lunes.plus(offset, DateTimeUnit.DAY).toString()] ?: 0.0 }
+                (0..6).map { offset -> totalesPorFecha[inicioCiclo.plus(offset, DateTimeUnit.DAY).toString()] ?: 0.0 }
             }
     }
 

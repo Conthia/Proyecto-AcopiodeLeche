@@ -14,11 +14,19 @@ import kotlinx.datetime.plus
  */
 object CicloSemanal {
 
+    private fun diasDesdeInicioDeCiclo(fecha: LocalDate): Int =
+        (fecha.dayOfWeek.ordinal - DayOfWeek.THURSDAY.ordinal + 7) % 7
+
     /** Jueves que inicia la semana (jueves a miércoles) a la que pertenece [fecha]. */
-    fun inicioDeSemana(fecha: LocalDate): LocalDate {
-        val diasDesdeJueves = (fecha.dayOfWeek.ordinal - DayOfWeek.THURSDAY.ordinal + 7) % 7
-        return fecha.minus(diasDesdeJueves, DateTimeUnit.DAY)
-    }
+    fun inicioDeSemana(fecha: LocalDate): LocalDate =
+        fecha.minus(diasDesdeInicioDeCiclo(fecha), DateTimeUnit.DAY)
+
+    /**
+     * Distancia en días desde el jueves de inicio del ciclo hasta [fecha]: 0 = jueves, 1 =
+     * viernes, ..., 6 = miércoles. Para cualquier [fecha], siempre se cumple
+     * `inicioDeSemana(fecha) + indiceEnCiclo(fecha) días == fecha`.
+     */
+    fun indiceEnCiclo(fecha: LocalDate): Int = diasDesdeInicioDeCiclo(fecha)
 
     /** Viernes siguiente al cierre de la semana que empieza en [semanaInicio] (jueves + 8 días). */
     fun fechaDePago(semanaInicio: LocalDate): LocalDate = semanaInicio.plus(8, DateTimeUnit.DAY)
