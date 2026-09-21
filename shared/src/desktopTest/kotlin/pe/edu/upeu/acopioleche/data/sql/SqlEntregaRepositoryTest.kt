@@ -185,4 +185,14 @@ class SqlEntregaRepositoryTest {
 
         assertEquals(expected = 22.0, actual = volumen.sum())
     }
+
+    @Test
+    fun `observarVolumenDeSemana suma dos entregas del mismo dia en un solo valor`() = runBlocking {
+        val repo = abrirRepositorio()
+        poblarSemanaDePrueba(repo)
+
+        val volumen = repo.observarVolumenDeSemana(hoy = lunesDeEstaSemana).first()
+
+        assertEquals(expected = 12.0, actual = volumen[3]) // jueves: E-VOL-JUE-1 (5.0) + E-VOL-JUE-2 (7.0)
+    }
 }
