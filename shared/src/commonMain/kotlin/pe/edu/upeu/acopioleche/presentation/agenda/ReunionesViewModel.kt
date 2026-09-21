@@ -5,9 +5,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -15,7 +17,9 @@ import kotlin.time.Clock
 import pe.edu.upeu.acopioleche.domain.model.Reunion
 import pe.edu.upeu.acopioleche.domain.repository.AsistenciaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ReunionRepository
+import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReunionesViewModel(
@@ -24,8 +28,8 @@ class ReunionesViewModel(
     private val asistenciaRepository: AsistenciaRepository,
 ) : AppViewModel(scope = scope) {
 
-    private val _uiState = MutableStateFlow(ReunionesUiState())
-    val uiState: StateFlow<ReunionesUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<UiState<ReunionesUiState>>(UiState.Cargando)
+    val uiState: StateFlow<UiState<ReunionesUiState>> = _uiState.asStateFlow()
 
     init {
         val hoy = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -56,6 +60,16 @@ class ReunionesViewModel(
                         }
                     }
                 }
+                // .catch va al final de TODA la cadena (después del flatMapLatest) para que
+                // también atrape fallos de los flujos internos de asistencia, no solo de
+                // observarReuniones().
+                .map<ReunionesUiState, UiState<ReunionesUiState>> { estado ->
+                    if (estado.reuniones.isEmpty()) UiState.Vacio else UiState.Exito(estado)
+                }
+                .catch { error ->
+                    AppLogger.error(TAG, "Error al observar reuniones", error)
+                    emit(UiState.Error("No se pudo cargar la información"))
+                }
                 .collect { estado -> _uiState.value = estado }
         }
     }
@@ -77,5 +91,9 @@ class ReunionesViewModel(
                 alEliminarDefinitivo()
             }
         }
+    }
+
+    private companion object {
+        const val TAG = "ReunionesViewModel"
     }
 }

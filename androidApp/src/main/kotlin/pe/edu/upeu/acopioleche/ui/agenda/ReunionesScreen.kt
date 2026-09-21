@@ -3,8 +3,10 @@ package pe.edu.upeu.acopioleche.ui.agenda
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,8 +40,13 @@ import pe.edu.upeu.acopioleche.di.ServiceLocator
 import pe.edu.upeu.acopioleche.domain.model.Reunion
 import pe.edu.upeu.acopioleche.domain.model.TipoEvento
 import pe.edu.upeu.acopioleche.presentation.agenda.ReunionResumen
+import pe.edu.upeu.acopioleche.presentation.agenda.ReunionesUiState
 import pe.edu.upeu.acopioleche.presentation.agenda.ReunionesViewModel
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
+import pe.edu.upeu.acopioleche.ui.components.EstadoCargando
+import pe.edu.upeu.acopioleche.ui.components.EstadoError
+import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.theme.FondoPantalla
 import pe.edu.upeu.acopioleche.ui.theme.RojoAlerta
 import pe.edu.upeu.acopioleche.ui.theme.TextoSecundario
@@ -56,6 +63,7 @@ fun ReunionesScreen(alAbrirAsistencia: (reunionId: String) -> Unit) {
         )
     }
     val uiState by viewModel.uiState.collectAsState()
+    val exito = uiState as? UiState.Exito<ReunionesUiState>
 
     var mostrarDialogoNuevo by remember { mutableStateOf(false) }
     var reunionAEditar by remember { mutableStateOf<ReunionResumen?>(null) }
@@ -66,29 +74,38 @@ fun ReunionesScreen(alAbrirAsistencia: (reunionId: String) -> Unit) {
         topBar = { AppTopBar(titulo = "Reuniones y capacitaciones", subtitulo = "Agenda distrital") },
         containerColor = FondoPantalla,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "${uiState.reuniones.size} eventos programados", style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
-                    Button(
-                        onClick = { mostrarDialogoNuevo = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
-                    ) { Text("+ Agendar reunión") }
-                }
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = exito?.datos?.reuniones?.size?.let { "$it eventos programados" } ?: "", style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
+                Button(
+                    onClick = { mostrarDialogoNuevo = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
+                ) { Text("+ Agendar reunión") }
             }
             mensajeNotificacion?.let { texto ->
-                item { Text(text = texto, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium) }
+                Text(text = texto, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
             }
-            items(uiState.reuniones) { reunion ->
-                ReunionCard(
-                    reunion = reunion,
-                    alTocar = { alAbrirAsistencia(reunion.id) },
-                    alEditar = { reunionAEditar = reunion },
-                    alEliminar = { reunionAEliminar = reunion },
+            Spacer(modifier = Modifier.height(12.dp))
+            when (val estado = uiState) {
+                UiState.Cargando -> EstadoCargando(modifier = Modifier.weight(1f))
+                UiState.Vacio -> EstadoVacio(
+                    mensaje = "No hay eventos programados. Usa '+ Agendar reunión' para crear el primero.",
+                    modifier = Modifier.weight(1f),
                 )
+                is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.weight(1f))
+                is UiState.Exito -> LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(estado.datos.reuniones) { reunion ->
+                        ReunionCard(
+                            reunion = reunion,
+                            alTocar = { alAbrirAsistencia(reunion.id) },
+                            alEditar = { reunionAEditar = reunion },
+                            alEliminar = { reunionAEliminar = reunion },
+                        )
+                    }
+                }
             }
         }
 
