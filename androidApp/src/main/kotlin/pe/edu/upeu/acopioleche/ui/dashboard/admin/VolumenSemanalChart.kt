@@ -13,15 +13,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 import pe.edu.upeu.acopioleche.ui.theme.TextoSecundario
 import pe.edu.upeu.acopioleche.ui.theme.VerdeBorde
 import pe.edu.upeu.acopioleche.ui.theme.VerdeOscuro
 
 private val DIAS = listOf("L", "M", "M", "J", "V", "S", "D")
 
+/**
+ * [valores] está ordenado lunes→domingo (índice 0 = lunes), igual que
+ * `EntregaRepository.observarVolumenUltimaSemana()`. El índice de "hoy" se calcula con la misma
+ * fórmula (`dayOfWeek.ordinal`) para que el resaltado coincida con el día real, no un índice fijo.
+ */
 @Composable
 fun VolumenSemanalChart(valores: List<Double>) {
     val maximo = (valores.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
+    val indiceHoy = Clock.System.todayIn(TimeZone.currentSystemDefault()).dayOfWeek.ordinal
 
     Row(
         modifier = Modifier.fillMaxWidth().height(130.dp),
@@ -42,7 +51,7 @@ fun VolumenSemanalChart(valores: List<Double>) {
                         .fillMaxWidth()
                         .height((90 * alturaFraccion).dp.coerceAtLeast(2.dp))
                         .background(
-                            color = if (index == DIAS.size - 3) VerdeOscuro else VerdeBorde,
+                            color = if (index == indiceHoy) VerdeOscuro else VerdeBorde,
                             shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp),
                         ),
                 )
