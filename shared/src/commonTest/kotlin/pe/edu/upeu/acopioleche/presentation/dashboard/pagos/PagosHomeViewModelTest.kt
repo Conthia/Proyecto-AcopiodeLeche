@@ -29,6 +29,7 @@ import pe.edu.upeu.acopioleche.domain.model.SancionAplicada
 import pe.edu.upeu.acopioleche.domain.model.Turno
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.liquidacion.LiquidacionesViewModel
 
 /**
@@ -107,6 +108,7 @@ class PagosHomeViewModelTest {
             liquidacionRepository = liquidacionRepo,
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = precioRepo,
+            reglasNegocio = ReglasNegocio(),
         )
         liquidacionesViewModel.onGenerarClick()
         val generada = liquidacionRepo.buscar(proveedorId = "P-014", semanaInicio = semanaInicio)
@@ -118,6 +120,7 @@ class PagosHomeViewModelTest {
             pagoRepository = FakePagoRepository(),
             precioTemporadaRepository = precioRepo,
             sancionRepository = sancionRepo,
+            reglasNegocio = ReglasNegocio(),
             proveedorRepository = FakeProveedorRepository(),
             entregaRepository = entregaRepo,
             encargadoId = "PAGOS-01",

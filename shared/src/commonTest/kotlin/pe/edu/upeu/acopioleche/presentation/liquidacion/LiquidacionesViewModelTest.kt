@@ -24,6 +24,7 @@ import pe.edu.upeu.acopioleche.domain.model.PrecioVigente
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.core.UiState
 
 class LiquidacionesViewModelTest {
@@ -38,6 +39,7 @@ class LiquidacionesViewModelTest {
             liquidacionRepository = FakeLiquidacionRepository(),
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = FakePrecioTemporadaRepository(),
+            reglasNegocio = ReglasNegocio(),
         )
 
         assertEquals(expected = UiState.Cargando, actual = viewModel.uiState.value)
@@ -53,6 +55,7 @@ class LiquidacionesViewModelTest {
             liquidacionRepository = FakeLiquidacionRepository(),
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = FakePrecioTemporadaRepository(),
+            reglasNegocio = ReglasNegocio(),
         )
 
         val estado = viewModel.uiState.value
@@ -70,6 +73,7 @@ class LiquidacionesViewModelTest {
             liquidacionRepository = FakeLiquidacionRepository(),
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = FakePrecioTemporadaRepository(),
+            reglasNegocio = ReglasNegocio(),
         )
 
         assertEquals(expected = UiState.Vacio, actual = viewModel.uiState.value)
@@ -85,6 +89,7 @@ class LiquidacionesViewModelTest {
             liquidacionRepository = FakeLiquidacionRepository(),
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = FakePrecioTemporadaRepository(),
+            reglasNegocio = ReglasNegocio(),
         )
 
         val estado = viewModel.uiState.value
@@ -105,6 +110,7 @@ class LiquidacionesViewModelTest {
             precioTemporadaRepository = PrecioTemporadaRepositoryFijo(
                 PrecioVigente(precioPorLitro = 2.20, esRespaldo = false),
             ),
+            reglasNegocio = ReglasNegocio(),
         )
 
         viewModel.onGenerarClick()
@@ -127,6 +133,7 @@ class LiquidacionesViewModelTest {
             precioTemporadaRepository = PrecioTemporadaRepositoryFijo(
                 PrecioVigente(precioPorLitro = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, esRespaldo = true),
             ),
+            reglasNegocio = ReglasNegocio(),
         )
 
         viewModel.onGenerarClick()
@@ -150,6 +157,7 @@ class LiquidacionesViewModelTest {
             liquidacionRepository = liquidacionRepo,
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = precioRepo,
+            reglasNegocio = ReglasNegocio(),
         )
 
         viewModel.onGenerarClick()

@@ -8,6 +8,7 @@ import kotlinx.datetime.toLocalDateTime
 import pe.edu.upeu.acopioleche.data.fake.FakePagoRepository
 import pe.edu.upeu.acopioleche.data.fake.FakePrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -73,6 +74,7 @@ class PrecioTemporadaTest {
             proveedorId = "P-014",
             semanaInicio = semanaInicio,
             litrosAceptados = 100.0,
+            reglas = ReglasNegocio(),
             precioPorLitroVigente = 1.60,
         )
 
@@ -81,6 +83,7 @@ class PrecioTemporadaTest {
             proveedorId = "P-014",
             semanaInicio = semanaInicio,
             litrosAceptados = 100.0,
+            reglas = ReglasNegocio(),
             precioPorLitroVigente = 1.90,
         )
 

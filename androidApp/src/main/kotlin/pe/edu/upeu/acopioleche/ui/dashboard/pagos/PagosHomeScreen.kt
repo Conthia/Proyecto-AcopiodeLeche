@@ -67,6 +67,7 @@ fun PagosHomeScreen(
             pagoRepository = ServiceLocator.pagoRepository,
             precioTemporadaRepository = ServiceLocator.precioTemporadaRepository,
             sancionRepository = ServiceLocator.sancionRepository,
+            reglasNegocio = ServiceLocator.reglasNegocio,
             proveedorRepository = ServiceLocator.proveedorRepository,
             entregaRepository = ServiceLocator.entregaRepository,
             encargadoId = sesionActiva.usuarioId,

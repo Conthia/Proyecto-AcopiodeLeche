@@ -13,6 +13,7 @@ class MotorSancionesTest {
             proveedorId = "P-008",
             porcentajeAgua = 3.0,
             numeroAdulteracionesPrevias = 0,
+            reglas = ReglasNegocio(),
         )
 
         assertIs<ResultadoSancion.ReducirPrecioSemanal>(resultado)
@@ -25,6 +26,7 @@ class MotorSancionesTest {
             proveedorId = "P-008",
             porcentajeAgua = 5.0,
             numeroAdulteracionesPrevias = 0,
+            reglas = ReglasNegocio(),
         )
 
         assertIs<ResultadoSancion.ReducirPrecioSemanal>(resultado)
@@ -36,6 +38,7 @@ class MotorSancionesTest {
             proveedorId = "P-008",
             porcentajeAgua = 5.1,
             numeroAdulteracionesPrevias = 0,
+            reglas = ReglasNegocio(),
         )
 
         assertIs<ResultadoSancion.RetirarInmediato>(resultado)
@@ -47,17 +50,19 @@ class MotorSancionesTest {
             proveedorId = "P-008",
             porcentajeAgua = 1.0,
             numeroAdulteracionesPrevias = 1,
+            reglas = ReglasNegocio(),
         )
         val resultadoMayor = MotorSanciones.evaluarAdulteracion(
             proveedorId = "P-008",
             porcentajeAgua = 9.0,
             numeroAdulteracionesPrevias = 1,
+            reglas = ReglasNegocio(),
         )
 
         val retiroMenor = assertIs<ResultadoSancion.RetirarYMultar>(resultadoMenor)
         val retiroMayor = assertIs<ResultadoSancion.RetirarYMultar>(resultadoMayor)
-        assertEquals(expected = MotorSanciones.MULTA_SEGUNDA_ADULTERACION, actual = retiroMenor.montoMulta)
-        assertEquals(expected = MotorSanciones.MULTA_SEGUNDA_ADULTERACION, actual = retiroMayor.montoMulta)
+        assertEquals(expected = ReglasNegocio().multaSegundaAdulteracion, actual = retiroMenor.montoMulta)
+        assertEquals(expected = ReglasNegocio().multaSegundaAdulteracion, actual = retiroMayor.montoMulta)
     }
 
     @Test
@@ -66,6 +71,7 @@ class MotorSancionesTest {
             proveedorId = "P-008",
             porcentajeAgua = 20.0,
             numeroAdulteracionesPrevias = 3,
+            reglas = ReglasNegocio(),
         )
 
         assertIs<ResultadoSancion.RetirarYMultar>(resultado)
@@ -73,6 +79,6 @@ class MotorSancionesTest {
 
     @Test
     fun `la multa de la segunda vez es exactamente S 5000`() {
-        assertEquals(expected = 5000.0, actual = MotorSanciones.MULTA_SEGUNDA_ADULTERACION)
+        assertEquals(expected = 5000.0, actual = ReglasNegocio().multaSegundaAdulteracion)
     }
 }

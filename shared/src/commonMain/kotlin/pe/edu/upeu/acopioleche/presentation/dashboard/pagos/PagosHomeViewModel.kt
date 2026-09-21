@@ -27,6 +27,7 @@ import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
 import pe.edu.upeu.acopioleche.domain.repository.SancionRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
 import pe.edu.upeu.acopioleche.presentation.proveedor.ProveedorConEntregas
@@ -37,6 +38,7 @@ class PagosHomeViewModel(
     private val pagoRepository: PagoRepository,
     private val precioTemporadaRepository: PrecioTemporadaRepository,
     private val sancionRepository: SancionRepository,
+    private val reglasNegocio: ReglasNegocio,
     proveedorRepository: ProveedorRepository,
     entregaRepository: EntregaRepository,
     private val encargadoId: String,
@@ -205,6 +207,7 @@ class PagosHomeViewModel(
                     proveedorId = proveedorId,
                     semanaInicio = semanaInicio,
                     litrosAceptados = litros,
+                    reglas = reglasNegocio,
                     precioPorLitroVigente = precioVigente.precioPorLitro,
                     tieneSancionReduccionPendiente = tieneSancionPendiente,
                     generadaAutomaticamente = true,

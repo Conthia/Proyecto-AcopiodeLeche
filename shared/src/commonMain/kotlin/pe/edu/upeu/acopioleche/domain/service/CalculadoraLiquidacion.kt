@@ -9,13 +9,10 @@ import pe.edu.upeu.acopioleche.domain.model.Liquidacion
  * inventado.
  */
 object CalculadoraLiquidacion {
+    // Migra a ReglasNegocio.precioReferenciaPorLitro en el commit "Precio" de
+    // feature/reglas-negocio-config — se deja aquí todavía para no tocar dos veces la misma
+    // firma en la migración a ReglasNegocio (ver commit "Sanciones").
     const val PRECIO_REFERENCIA_POR_LITRO: Double = 1.70
-
-    // TODO: % de reducción de precio por adulteración leve (RN-10) NO CONFIRMADO con el
-    // interesado — la matriz solo dice "se reduce el precio de toda la leche entregada esa
-    // semana" sin indicar cuánto (mismo caso pendiente que RN-14, la bonificación por grasa).
-    // Valor propuesto mientras se confirma.
-    const val PORCENTAJE_REDUCCION_POR_ADULTERACION_LEVE: Double = 0.15
 
     /**
      * Fecha que decide qué [pe.edu.upeu.acopioleche.domain.model.PrecioTemporada] aplica a una
@@ -32,16 +29,18 @@ object CalculadoraLiquidacion {
         proveedorId: String,
         semanaInicio: LocalDate,
         litrosAceptados: Double,
+        reglas: ReglasNegocio,
         precioPorLitroVigente: Double = PRECIO_REFERENCIA_POR_LITRO,
         tieneSancionReduccionPendiente: Boolean = false,
         generadaAutomaticamente: Boolean = true,
     ): Liquidacion {
         val montoBruto = litrosAceptados * precioPorLitroVigente
 
-        // TODO: Bonificación por grasa alta NO CONFIRMADA con el interesado.
-        // El precio base por litro solo se ajusta a la baja mediante sanciones aplicadas (RN-10), nunca al alza.
+        // RN-14: bonificación por grasa alta NO DEFINIDA (reglas.bonificacionPorGrasaPorLitro),
+        // no se aplica aquí todavía — ver PENDIENTES.md. El precio base por litro solo se ajusta
+        // a la baja mediante sanciones aplicadas (RN-10), nunca al alza.
         val montoFinal = if (tieneSancionReduccionPendiente) {
-            montoBruto * (1 - PORCENTAJE_REDUCCION_POR_ADULTERACION_LEVE)
+            montoBruto * (1 - reglas.porcentajeReduccionAdulteracionLeveProvisional)
         } else {
             montoBruto
         }
