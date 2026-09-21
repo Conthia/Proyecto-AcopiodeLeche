@@ -110,7 +110,7 @@ fun AsistenciaScreen(reunionId: String, alVolver: () -> Unit) {
                     }
                     item {
                         Button(
-                            onClick = { viewModel.onCerrarActa(); alVolver() },
+                            onClick = { alVolver() },
                             enabled = hayConvocados,
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),

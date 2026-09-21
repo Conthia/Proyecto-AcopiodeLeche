@@ -83,13 +83,6 @@ class AsistenciaViewModel(
         }
     }
 
-    fun onCerrarActa() {
-        val estado = _uiState.value
-        if (estado is UiState.Exito) {
-            _uiState.value = estado.copy(datos = estado.datos.copy(actaCerrada = true))
-        }
-    }
-
     private companion object {
         const val TAG = "AsistenciaViewModel"
     }

@@ -93,7 +93,6 @@ class AsistenciaViewModelTest {
 
         viewModel.onToggleConvocado(actorId = "P-014")
         viewModel.onEscanearQr()
-        viewModel.onCerrarActa()
 
         assertEquals(expected = UiState.Cargando, actual = viewModel.uiState.value)
     }
@@ -110,7 +109,6 @@ class AsistenciaViewModelTest {
 
         viewModel.onToggleConvocado(actorId = "P-014")
         viewModel.onEscanearQr()
-        viewModel.onCerrarActa()
 
         val estado = viewModel.uiState.value
         assertIs<UiState.Error>(estado)
