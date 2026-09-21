@@ -28,6 +28,7 @@ import pe.edu.upeu.acopioleche.domain.repository.SancionRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
 import pe.edu.upeu.acopioleche.domain.service.GeneradorNotificaciones
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
 import pe.edu.upeu.acopioleche.presentation.core.UiState
@@ -51,6 +52,7 @@ class LiquidacionesViewModel(
     private val liquidacionRepository: LiquidacionRepository,
     private val notificacionRepository: NotificacionRepository,
     private val precioTemporadaRepository: PrecioTemporadaRepository,
+    private val reglasNegocio: ReglasNegocio,
 ) : AppViewModel(scope = scope) {
 
     private val semanaMostrada = CicloSemanal.inicioDeSemana(Clock.System.todayIn(TimeZone.currentSystemDefault()))
@@ -135,14 +137,15 @@ class LiquidacionesViewModel(
 
     private suspend fun obtenerPrecioPorLitroDeLaSemana(): Double {
         val fechaReferencia = CalculadoraLiquidacion.fechaReferenciaPrecio(semanaMostrada)
-        val precioVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferencia)
-        if (precioVigente.esRespaldo) {
+        val temporadaVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferencia)
+        if (temporadaVigente == null) {
             AppLogger.warn(
                 TAG,
-                "No hay PrecioTemporada vigente para $fechaReferencia; usando el respaldo S/ ${precioVigente.precioPorLitro}/L",
+                "No hay PrecioTemporada vigente para $fechaReferencia; usando el respaldo S/ ${reglasNegocio.precioReferenciaPorLitro}/L",
             )
+            return reglasNegocio.precioReferenciaPorLitro
         }
-        return precioVigente.precioPorLitro
+        return temporadaVigente.precioPorLitro
     }
 
     private suspend fun generarPara(proveedorId: String, automatica: Boolean, precioPorLitro: Double): Liquidacion {
@@ -161,6 +164,7 @@ class LiquidacionesViewModel(
             proveedorId = proveedorId,
             semanaInicio = semanaMostrada,
             litrosAceptados = litrosAceptados,
+            reglas = reglasNegocio,
             precioPorLitroVigente = precioPorLitro,
             tieneSancionReduccionPendiente = tieneSancionPendiente,
             generadaAutomaticamente = automatica,

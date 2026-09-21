@@ -15,6 +15,7 @@ class CalculadoraLiquidacionTest {
             proveedorId = "P-014",
             semanaInicio = jueves,
             litrosAceptados = 100.0,
+            reglas = ReglasNegocio(),
             tieneSancionReduccionPendiente = false,
             generadaAutomaticamente = false,
         )
@@ -29,6 +30,7 @@ class CalculadoraLiquidacionTest {
             proveedorId = "P-014",
             semanaInicio = jueves,
             litrosAceptados = 100.0,
+            reglas = ReglasNegocio(),
             tieneSancionReduccionPendiente = false,
             generadaAutomaticamente = false,
         )
@@ -43,11 +45,12 @@ class CalculadoraLiquidacionTest {
             proveedorId = "P-014",
             semanaInicio = jueves,
             litrosAceptados = 100.0,
+            reglas = ReglasNegocio(),
             tieneSancionReduccionPendiente = true,
             generadaAutomaticamente = false,
         )
 
-        val esperado = conSancion.montoBruto * (1 - CalculadoraLiquidacion.PORCENTAJE_REDUCCION_POR_ADULTERACION_LEVE)
+        val esperado = conSancion.montoBruto * (1 - ReglasNegocio().porcentajeReduccionAdulteracionLeveProvisional)
         assertEquals(expected = esperado, actual = conSancion.montoFinal)
     }
 
@@ -58,6 +61,7 @@ class CalculadoraLiquidacionTest {
             proveedorId = "P-014",
             semanaInicio = jueves,
             litrosAceptados = 50.0,
+            reglas = ReglasNegocio(),
             tieneSancionReduccionPendiente = true,
             generadaAutomaticamente = false,
         )
@@ -74,10 +78,59 @@ class CalculadoraLiquidacionTest {
             proveedorId = "P-014",
             semanaInicio = jueves,
             litrosAceptados = 10.0,
+            reglas = ReglasNegocio(),
             tieneSancionReduccionPendiente = false,
             generadaAutomaticamente = false,
         )
 
         assertEquals(expected = LocalDate(2026, 9, 11), actual = liquidacion.fechaPago)
+    }
+
+    /**
+     * RN-14 (NO DEFINIDA): `bonificacionPorGrasaPorLitro` no tiene ningún consumidor todavía
+     * (ver comentario en `CalculadoraLiquidacion.calcular`) — esta prueba deja constancia de que
+     * el campo es inerte: cambiar su valor (null u otro número cualquiera) no afecta el cálculo,
+     * para que si algún día alguien lo conecta por accidente sin querer, este test lo marque.
+     */
+    @Test
+    fun `bonificacionPorGrasaPorLitro no definida no se lee ni afecta el calculo (RN-14)`() {
+        val sinBonificacion = CalculadoraLiquidacion.calcular(
+            id = "LIQ-6",
+            proveedorId = "P-014",
+            semanaInicio = jueves,
+            litrosAceptados = 100.0,
+            reglas = ReglasNegocio(bonificacionPorGrasaPorLitro = null),
+            tieneSancionReduccionPendiente = false,
+            generadaAutomaticamente = false,
+        )
+        val conBonificacionHipotetica = CalculadoraLiquidacion.calcular(
+            id = "LIQ-7",
+            proveedorId = "P-014",
+            semanaInicio = jueves,
+            litrosAceptados = 100.0,
+            reglas = ReglasNegocio(bonificacionPorGrasaPorLitro = 0.50),
+            tieneSancionReduccionPendiente = false,
+            generadaAutomaticamente = false,
+        )
+
+        assertEquals(expected = sinBonificacion.montoBruto, actual = conBonificacionHipotetica.montoBruto)
+        assertEquals(expected = sinBonificacion.montoFinal, actual = conBonificacionHipotetica.montoFinal)
+    }
+
+    @Test
+    fun `porcentajeReduccionAdulteracionLeveProvisional solo se aplica cuando hay sancion pendiente, no se lee por accidente`() {
+        val reglasConReduccionAlta = ReglasNegocio(porcentajeReduccionAdulteracionLeveProvisional = 0.90)
+
+        val sinSancion = CalculadoraLiquidacion.calcular(
+            id = "LIQ-8",
+            proveedorId = "P-014",
+            semanaInicio = jueves,
+            litrosAceptados = 100.0,
+            reglas = reglasConReduccionAlta,
+            tieneSancionReduccionPendiente = false,
+            generadaAutomaticamente = false,
+        )
+
+        assertEquals(expected = sinSancion.montoBruto, actual = sinSancion.montoFinal)
     }
 }

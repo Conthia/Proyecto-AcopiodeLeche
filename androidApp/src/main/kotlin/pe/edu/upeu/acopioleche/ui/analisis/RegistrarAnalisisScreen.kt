@@ -64,6 +64,7 @@ fun RegistrarAnalisisScreen(
             sancionRepository = ServiceLocator.sancionRepository,
             capacitacionCorrectivaRepository = ServiceLocator.capacitacionCorrectivaRepository,
             notificacionRepository = ServiceLocator.notificacionRepository,
+            reglasNegocio = ServiceLocator.reglasNegocio,
             entregaId = entregaId,
             tecnicoId = sesionActiva.usuarioId,
         )

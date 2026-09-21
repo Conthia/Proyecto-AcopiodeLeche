@@ -30,6 +30,7 @@ import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
 import pe.edu.upeu.acopioleche.domain.service.EvaluadorCalidad
 import pe.edu.upeu.acopioleche.domain.service.GeneradorNotificaciones
 import pe.edu.upeu.acopioleche.domain.service.MotorSanciones
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
 
 class RegistrarAnalisisViewModel(
@@ -40,6 +41,7 @@ class RegistrarAnalisisViewModel(
     private val sancionRepository: SancionRepository,
     private val capacitacionCorrectivaRepository: CapacitacionCorrectivaRepository,
     private val notificacionRepository: NotificacionRepository,
+    private val reglasNegocio: ReglasNegocio,
     private val entregaId: String,
     private val tecnicoId: String,
 ) : AppViewModel(scope = scope) {
@@ -108,7 +110,7 @@ class RegistrarAnalisisViewModel(
         scope.launch {
             _uiState.value = _uiState.value.copy(guardando = true, mensajeError = null)
 
-            val resultado = EvaluadorCalidad.evaluar(lectura)
+            val resultado = EvaluadorCalidad.evaluar(lectura, reglasNegocio)
             val analisis = AnalisisCalidad(
                 id = "AC-${Clock.System.now().toEpochMilliseconds()}",
                 entregaId = entregaId,
@@ -196,6 +198,7 @@ class RegistrarAnalisisViewModel(
             proveedorId = proveedorId,
             porcentajeAgua = porcentajeAgua,
             numeroAdulteracionesPrevias = adulteracionesPrevias,
+            reglas = reglasNegocio,
         )
 
         val idSancion = "SAN-${Clock.System.now().toEpochMilliseconds()}"

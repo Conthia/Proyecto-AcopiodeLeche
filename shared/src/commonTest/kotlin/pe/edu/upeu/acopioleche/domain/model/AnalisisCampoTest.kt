@@ -2,6 +2,7 @@ package pe.edu.upeu.acopioleche.domain.model
 
 import kotlinx.datetime.LocalDateTime
 import pe.edu.upeu.acopioleche.domain.service.EvaluadorCalidad
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -88,7 +89,7 @@ class AnalisisCampoTest {
             ph = 6.6,
             porcentajeAguaAnadida = 0.0,
         )
-        val resultadoNormal = EvaluadorCalidad.evaluar(lecturaNormal)
+        val resultadoNormal = EvaluadorCalidad.evaluar(lecturaNormal, ReglasNegocio())
         assertIs<ResultadoAnalisis.Normal>(resultadoNormal)
 
         val lecturaAgua = LecturaLactoescan(
@@ -100,7 +101,7 @@ class AnalisisCampoTest {
             ph = 6.6,
             porcentajeAguaAnadida = 8.5,
         )
-        val resultadoAdulterada = EvaluadorCalidad.evaluar(lecturaAgua)
+        val resultadoAdulterada = EvaluadorCalidad.evaluar(lecturaAgua, ReglasNegocio())
         assertIs<ResultadoAnalisis.Adulterada>(resultadoAdulterada)
         assertEquals(8.5, resultadoAdulterada.porcentajeAgua)
     }

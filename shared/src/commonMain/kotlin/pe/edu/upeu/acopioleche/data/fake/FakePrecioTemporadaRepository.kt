@@ -5,9 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
 import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
-import pe.edu.upeu.acopioleche.domain.model.PrecioVigente
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
-import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 
 class FakePrecioTemporadaRepository : PrecioTemporadaRepository {
 
@@ -16,15 +14,10 @@ class FakePrecioTemporadaRepository : PrecioTemporadaRepository {
 
     override fun observarPrecios(): StateFlow<List<PrecioTemporada>> = precios
 
-    override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioVigente {
-        val coincidentes = _precios.value.filter { fecha >= it.fechaInicio && fecha <= it.fechaFin }
-        val masReciente = coincidentes.maxByOrNull { it.fechaInicio }
-        return if (masReciente != null) {
-            PrecioVigente(precioPorLitro = masReciente.precioPorLitro, esRespaldo = false)
-        } else {
-            PrecioVigente(precioPorLitro = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, esRespaldo = true)
-        }
-    }
+    override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioTemporada? =
+        _precios.value
+            .filter { fecha >= it.fechaInicio && fecha <= it.fechaFin }
+            .maxByOrNull { it.fechaInicio }
 
     override suspend fun guardar(precio: PrecioTemporada) {
         _precios.value = _precios.value.filterNot { it.id == precio.id } + precio

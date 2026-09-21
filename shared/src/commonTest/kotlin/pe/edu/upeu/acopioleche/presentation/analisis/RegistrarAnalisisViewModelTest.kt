@@ -19,6 +19,7 @@ import pe.edu.upeu.acopioleche.domain.model.EstadoEntrega
 import pe.edu.upeu.acopioleche.domain.model.MotivoRechazo
 import pe.edu.upeu.acopioleche.domain.model.ResultadoAnalisis
 import pe.edu.upeu.acopioleche.domain.model.Turno
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -60,6 +61,7 @@ class RegistrarAnalisisViewModelTest {
             sancionRepository = FakeSancionRepository(),
             capacitacionCorrectivaRepository = FakeCapacitacionCorrectivaRepository(),
             notificacionRepository = FakeNotificacionRepository(),
+            reglasNegocio = ReglasNegocio(),
             entregaId = entregaId,
             tecnicoId = "T-01",
         )

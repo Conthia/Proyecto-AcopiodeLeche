@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import pe.edu.upeu.acopioleche.data.fake.FakeUsuarioRepository
 import pe.edu.upeu.acopioleche.di.SesionActivaHolder
 import pe.edu.upeu.acopioleche.domain.model.RolUsuario
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 
 class LoginViewModelTest {
 
@@ -17,7 +18,11 @@ class LoginViewModelTest {
     fun loginExitosoParaAcopiadorIniciaSesionCorrectamente() = runBlocking {
         try {
             val repository = FakeUsuarioRepository()
-            val viewModel = LoginViewModel(scope = CoroutineScope(Dispatchers.Unconfined), usuarioRepository = repository)
+            val viewModel = LoginViewModel(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                usuarioRepository = repository,
+                reglasNegocio = ReglasNegocio(),
+            )
 
             viewModel.onNombreUsuarioChange("jmamani")
             viewModel.onContrasenaChange("Acopio2026")
@@ -40,7 +45,11 @@ class LoginViewModelTest {
     fun loginExitosoParaAdministradorAsignaRolAdministrador() = runBlocking {
         try {
             val repository = FakeUsuarioRepository()
-            val viewModel = LoginViewModel(scope = CoroutineScope(Dispatchers.Unconfined), usuarioRepository = repository)
+            val viewModel = LoginViewModel(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                usuarioRepository = repository,
+                reglasNegocio = ReglasNegocio(),
+            )
 
             viewModel.onNombreUsuarioChange("admin")
             viewModel.onContrasenaChange("Admin2026")
@@ -62,7 +71,11 @@ class LoginViewModelTest {
     fun loginConContrasenaIncorrectaMuestraErrorYNoIniciaSesion() = runBlocking {
         try {
             val repository = FakeUsuarioRepository()
-            val viewModel = LoginViewModel(scope = CoroutineScope(Dispatchers.Unconfined), usuarioRepository = repository)
+            val viewModel = LoginViewModel(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                usuarioRepository = repository,
+                reglasNegocio = ReglasNegocio(),
+            )
 
             viewModel.onNombreUsuarioChange("jmamani")
             viewModel.onContrasenaChange("WrongPass")
@@ -80,7 +93,11 @@ class LoginViewModelTest {
     fun tresIntentosFallidosConsecutivosBloqueanLaCuentaPor10Minutos() = runBlocking {
         try {
             val repository = FakeUsuarioRepository()
-            val viewModel = LoginViewModel(scope = CoroutineScope(Dispatchers.Unconfined), usuarioRepository = repository)
+            val viewModel = LoginViewModel(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                usuarioRepository = repository,
+                reglasNegocio = ReglasNegocio(),
+            )
 
             repeat(3) {
                 viewModel.onNombreUsuarioChange("jmamani")

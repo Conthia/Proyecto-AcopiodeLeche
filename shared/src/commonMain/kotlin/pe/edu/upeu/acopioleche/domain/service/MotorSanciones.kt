@@ -15,19 +15,18 @@ import pe.edu.upeu.acopioleche.domain.model.ResultadoSancion
  * registrados para ese proveedor, no de un contador dedicado.
  */
 object MotorSanciones {
-    const val UMBRAL_ADULTERACION_GRAVE_PORCENTAJE: Double = 5.0
-    const val MULTA_SEGUNDA_ADULTERACION: Double = 5000.0
 
     fun evaluarAdulteracion(
         proveedorId: String,
         porcentajeAgua: Double,
         numeroAdulteracionesPrevias: Int,
+        reglas: ReglasNegocio,
     ): ResultadoSancion =
         when {
             numeroAdulteracionesPrevias >= 1 ->
-                ResultadoSancion.RetirarYMultar(proveedorId = proveedorId, montoMulta = MULTA_SEGUNDA_ADULTERACION)
-            // Estrictamente mayor: exactamente 5% cuenta como RN-10 (leve), confirmado 2026-09-14.
-            porcentajeAgua > UMBRAL_ADULTERACION_GRAVE_PORCENTAJE ->
+                ResultadoSancion.RetirarYMultar(proveedorId = proveedorId, montoMulta = reglas.multaSegundaAdulteracion)
+            // Estrictamente mayor: exactamente el umbral cuenta como RN-10 (leve), confirmado 2026-09-14.
+            porcentajeAgua > reglas.umbralAdulteracionGravePorcentaje ->
                 ResultadoSancion.RetirarInmediato(proveedorId = proveedorId)
             else ->
                 ResultadoSancion.ReducirPrecioSemanal(proveedorId = proveedorId)

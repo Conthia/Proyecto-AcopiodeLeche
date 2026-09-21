@@ -46,6 +46,7 @@ import pe.edu.upeu.acopioleche.domain.repository.ReunionRepository
 import pe.edu.upeu.acopioleche.domain.repository.RutaRepository
 import pe.edu.upeu.acopioleche.domain.repository.SancionRepository
 import pe.edu.upeu.acopioleche.domain.repository.UsuarioRepository
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 
 /**
  * Localizador de servicios deliberadamente simple para esta versión exploratoria: no hay
@@ -91,6 +92,9 @@ object ServiceLocator {
     val pagoRepository: PagoRepository by lazy { SqlPagoRepository(database) }
     val produccionDerivadoRepository: ProduccionDerivadoRepository by lazy { SqlProduccionDerivadoRepository(database) }
     val insumoRepository: InsumoRepository by lazy { SqlInsumoRepository(database) }
+
+    /** Reglas de negocio parametrizables (ver `ReglasNegocio`), únicas para toda la app. */
+    val reglasNegocio: ReglasNegocio by lazy { ReglasNegocio() }
 
     // --- Red y sincronización offline-first (piloto Fase 1: Proveedor) ---
     // Ver docs/sincronizacion.md. Para replicar el patrón con Entrega/AnalisisCalidad/

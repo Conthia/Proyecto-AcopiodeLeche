@@ -61,6 +61,7 @@ fun LiquidacionesScreen(
             liquidacionRepository = ServiceLocator.liquidacionRepository,
             notificacionRepository = ServiceLocator.notificacionRepository,
             precioTemporadaRepository = ServiceLocator.precioTemporadaRepository,
+            reglasNegocio = ServiceLocator.reglasNegocio,
         )
     }
     val uiState by viewModel.uiState.collectAsState()

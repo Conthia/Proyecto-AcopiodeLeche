@@ -63,7 +63,11 @@ fun LoginScreen(
 ) {
     val scope = rememberCoroutineScope()
     val viewModel = remember {
-        LoginViewModel(scope = scope, usuarioRepository = ServiceLocator.usuarioRepository)
+        LoginViewModel(
+            scope = scope,
+            usuarioRepository = ServiceLocator.usuarioRepository,
+            reglasNegocio = ServiceLocator.reglasNegocio,
+        )
     }
     val uiState by viewModel.uiState.collectAsState()
 
