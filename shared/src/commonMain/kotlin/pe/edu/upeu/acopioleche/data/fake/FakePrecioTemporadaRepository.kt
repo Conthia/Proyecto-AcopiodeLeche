@@ -5,7 +5,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
 import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
+import pe.edu.upeu.acopioleche.domain.model.PrecioVigente
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
+import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 
 class FakePrecioTemporadaRepository : PrecioTemporadaRepository {
 
@@ -14,16 +16,24 @@ class FakePrecioTemporadaRepository : PrecioTemporadaRepository {
 
     override fun observarPrecios(): StateFlow<List<PrecioTemporada>> = precios
 
-    override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): Double {
+    override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioVigente {
         val coincidentes = _precios.value.filter { fecha >= it.fechaInicio && fecha <= it.fechaFin }
         val masReciente = coincidentes.maxByOrNull { it.fechaInicio }
-        return masReciente?.precioPorLitro ?: PRECIO_BASE_FALLBACK
+        return if (masReciente != null) {
+            PrecioVigente(precioPorLitro = masReciente.precioPorLitro, esRespaldo = false)
+        } else {
+            PrecioVigente(precioPorLitro = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, esRespaldo = true)
+        }
     }
 
     override suspend fun guardar(precio: PrecioTemporada) {
         _precios.value = _precios.value.filterNot { it.id == precio.id } + precio
     }
 
+    // Datos de ejemplo NO confirmados por el cliente (ver PENDIENTES.md): fechas y precios de
+    // temporada inventados para poder probar el flujo. Tampoco existe hoy edición ni eliminación
+    // de precios de temporada por el Administrador (`PrecioTemporadaRepository` solo tiene
+    // `guardar`; `PagosHomeScreen.kt` únicamente permite crear uno nuevo y listarlos).
     private fun seed(): List<PrecioTemporada> =
         listOf(
             PrecioTemporada(
@@ -41,8 +51,4 @@ class FakePrecioTemporadaRepository : PrecioTemporadaRepository {
                 precioPorLitro = 1.90,
             ),
         )
-
-    companion object {
-        const val PRECIO_BASE_FALLBACK: Double = 1.80
-    }
 }
