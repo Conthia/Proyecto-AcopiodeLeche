@@ -15,11 +15,13 @@ import pe.edu.upeu.acopioleche.domain.model.Usuario
 import pe.edu.upeu.acopioleche.domain.repository.UsuarioRepository
 import pe.edu.upeu.acopioleche.domain.service.PasswordHasher
 import pe.edu.upeu.acopioleche.domain.service.PoliticaBloqueoLogin
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
 
 class LoginViewModel(
     scope: CoroutineScope,
     private val usuarioRepository: UsuarioRepository,
+    private val reglasNegocio: ReglasNegocio,
 ) : AppViewModel(scope = scope) {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -70,10 +72,10 @@ class LoginViewModel(
         val usuario: Usuario = usuarioRepository.buscarPorNombreUsuario(nombreUsuario = nombreUsuario)
             ?: return ResultadoLogin.CredencialesInvalidas
 
-        when (val bloqueo = PoliticaBloqueoLogin.evaluar(usuario.intentosFallidos, usuario.ultimoIntentoFallidoEn, ahora)) {
+        when (val bloqueo = PoliticaBloqueoLogin.evaluar(usuario.intentosFallidos, usuario.ultimoIntentoFallidoEn, ahora, reglasNegocio)) {
             is EstadoBloqueoCuenta.Bloqueado -> return ResultadoLogin.CuentaBloqueada(minutosRestantes = bloqueo.minutosRestantes)
             is EstadoBloqueoCuenta.Habilitado -> {
-                if (usuario.intentosFallidos >= PoliticaBloqueoLogin.MAX_INTENTOS_FALLIDOS) {
+                if (usuario.intentosFallidos >= reglasNegocio.maxIntentosFallidos) {
                     usuarioRepository.reiniciarIntentos(usuarioId = usuario.id)
                 }
             }
@@ -83,7 +85,7 @@ class LoginViewModel(
         if (!credencialesValidas) {
             val nuevosIntentos = usuario.intentosFallidos + 1
             usuarioRepository.registrarIntentoFallido(usuarioId = usuario.id, momento = ahora)
-            val bloqueoTrasFallo = PoliticaBloqueoLogin.evaluar(nuevosIntentos, ahora, ahora)
+            val bloqueoTrasFallo = PoliticaBloqueoLogin.evaluar(nuevosIntentos, ahora, ahora, reglasNegocio)
             if (bloqueoTrasFallo is EstadoBloqueoCuenta.Bloqueado) {
                 return ResultadoLogin.CuentaBloqueada(minutosRestantes = bloqueoTrasFallo.minutosRestantes)
             }

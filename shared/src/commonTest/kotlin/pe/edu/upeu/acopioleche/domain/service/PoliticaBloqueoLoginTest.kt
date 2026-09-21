@@ -13,14 +13,14 @@ class PoliticaBloqueoLoginTest {
 
     @Test
     fun `con menos de 3 intentos fallidos la cuenta esta habilitada`() {
-        val estado = PoliticaBloqueoLogin.evaluar(intentosFallidos = 2, ultimoIntentoFallidoEn = ahora, ahora = ahora)
+        val estado = PoliticaBloqueoLogin.evaluar(intentosFallidos = 2, ultimoIntentoFallidoEn = ahora, ahora = ahora, reglas = ReglasNegocio())
 
         assertIs<EstadoBloqueoCuenta.Habilitado>(estado)
     }
 
     @Test
     fun `al tercer intento fallido la cuenta queda bloqueada 10 minutos`() {
-        val estado = PoliticaBloqueoLogin.evaluar(intentosFallidos = 3, ultimoIntentoFallidoEn = ahora, ahora = ahora)
+        val estado = PoliticaBloqueoLogin.evaluar(intentosFallidos = 3, ultimoIntentoFallidoEn = ahora, ahora = ahora, reglas = ReglasNegocio())
 
         assertIs<EstadoBloqueoCuenta.Bloqueado>(estado)
         assertEquals(expected = 10, actual = estado.minutosRestantes)
@@ -32,6 +32,7 @@ class PoliticaBloqueoLoginTest {
             intentosFallidos = 3,
             ultimoIntentoFallidoEn = ahora,
             ahora = ahora + 5.minutes,
+            reglas = ReglasNegocio(),
         )
 
         assertIs<EstadoBloqueoCuenta.Bloqueado>(estado)
@@ -44,6 +45,7 @@ class PoliticaBloqueoLoginTest {
             intentosFallidos = 3,
             ultimoIntentoFallidoEn = ahora,
             ahora = ahora + 10.minutes,
+            reglas = ReglasNegocio(),
         )
 
         assertIs<EstadoBloqueoCuenta.Habilitado>(estado)
@@ -51,7 +53,7 @@ class PoliticaBloqueoLoginTest {
 
     @Test
     fun `sin intentos previos la cuenta esta habilitada`() {
-        val estado = PoliticaBloqueoLogin.evaluar(intentosFallidos = 0, ultimoIntentoFallidoEn = null, ahora = ahora)
+        val estado = PoliticaBloqueoLogin.evaluar(intentosFallidos = 0, ultimoIntentoFallidoEn = null, ahora = ahora, reglas = ReglasNegocio())
 
         assertIs<EstadoBloqueoCuenta.Habilitado>(estado)
     }
