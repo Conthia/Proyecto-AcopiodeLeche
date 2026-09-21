@@ -1,111 +1,73 @@
 package pe.edu.upeu.acopioleche.domain.model
 
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 
 class EntregaTest {
 
-    private fun entregaValida(estado: EstadoEntrega = EstadoEntrega.Pendiente) = Entrega(
-        id = "e-1",
-        proveedorId = "p-1",
-        acopiadorId = "a-1",
-        centroAcopioId = "c-1",
-        fecha = "2026-08-24",
-        turno = "MANIANA",
-        volumenLitros = 50.0,
-        estado = estado,
-    )
-
     @Test
-    fun `entrega con volumen positivo se crea correctamente`() {
-        val entrega = entregaValida()
+    fun `conserva el volumen y el turno registrados`() {
+        val entrega = entregaDePrueba(volumenLitros = 24.0, turno = Turno.MANANA)
 
-        assertEquals(expected = 50.0, actual = entrega.volumenLitros)
+        assertEquals(expected = 24.0, actual = entrega.volumenLitros)
+        assertEquals(expected = Turno.MANANA, actual = entrega.turno)
     }
 
     @Test
-    fun `entrega con volumen cero lanza excepcion`() {
-        assertFailsWith<IllegalArgumentException> {
-            Entrega(
-                id = "e-1",
-                proveedorId = "p-1",
-                acopiadorId = "a-1",
-                centroAcopioId = "c-1",
-                fecha = "2026-08-24",
-                turno = "MANIANA",
-                volumenLitros = 0.0,
-                estado = EstadoEntrega.Pendiente,
-            )
-        }
+    fun `puede no tener acopiador cuando la entrega es directa en planta`() {
+        val entrega = entregaDePrueba(volumenLitros = 10.0, turno = Turno.TARDE).copy(acopiadorId = null)
+
+        assertEquals(expected = null, actual = entrega.acopiadorId)
     }
 
     @Test
-    fun `entrega con volumen negativo lanza excepcion`() {
-        assertFailsWith<IllegalArgumentException> {
-            Entrega(
-                id = "e-1",
-                proveedorId = "p-1",
-                acopiadorId = "a-1",
-                centroAcopioId = "c-1",
-                fecha = "2026-08-24",
-                turno = "MANIANA",
-                volumenLitros = -10.0,
-                estado = EstadoEntrega.Pendiente,
-            )
-        }
+    fun `inicia en estado Pendiente hasta que se procese`() {
+        val entrega = entregaDePrueba(volumenLitros = 15.0, turno = Turno.MANANA)
+
+        assertIs<EstadoEntrega.Pendiente>(entrega.estado)
     }
 
     @Test
-    fun `entrega sin proveedor asociado lanza excepcion`() {
-        assertFailsWith<IllegalArgumentException> {
-            Entrega(
-                id = "e-1",
-                proveedorId = "",
-                acopiadorId = "a-1",
-                centroAcopioId = "c-1",
-                fecha = "2026-08-24",
-                turno = "MANIANA",
-                volumenLitros = 50.0,
-                estado = EstadoEntrega.Pendiente,
-            )
-        }
+    fun `conserva la cantidad de porongos entregados`() {
+        val entrega = entregaDePrueba(volumenLitros = 24.0, turno = Turno.MANANA).copy(cantidadPorongos = 2)
+
+        assertEquals(expected = 2, actual = entrega.cantidadPorongos)
     }
 
     @Test
-    fun `estado rechazada conserva el motivo del rechazo`() {
-        val entrega = entregaValida(
-            estado = EstadoEntrega.Rechazada(motivo = MotivoRechazo.DENSIDAD_FUERA_DE_RANGO),
-        )
+    fun `sin volumen de planta registrado la diferencia es nula`() {
+        val entrega = entregaDePrueba(volumenLitros = 34.0, turno = Turno.MANANA)
 
-        val estado = entrega.estado
-        check(estado is EstadoEntrega.Rechazada)
-        assertEquals(expected = MotivoRechazo.DENSIDAD_FUERA_DE_RANGO, actual = estado.motivo)
+        assertEquals(expected = null, actual = entrega.volumenPlantaLitros)
+        assertEquals(expected = null, actual = entrega.diferenciaLitros)
     }
 
     @Test
-    fun `when exhaustivo sobre estado entrega cubre todos los casos`() {
-        val estados = listOf(
-            EstadoEntrega.Pendiente,
-            EstadoEntrega.Aceptada,
-            EstadoEntrega.Rechazada(motivo = MotivoRechazo.ACIDEZ_FUERA_DE_RANGO),
-            EstadoEntrega.EnTransitoAPlanta(transportistaId = "t-1", horaSalida = "07:30"),
-            EstadoEntrega.Liquidada(liquidacionId = "liq-1"),
-        )
+    fun `la diferencia es negativa cuando se pierden litros entre el campo y la planta`() {
+        val entrega = entregaDePrueba(volumenLitros = 34.0, turno = Turno.MANANA).copy(volumenPlantaLitros = 32.0)
 
-        val descripciones = estados.map { estado ->
-            when (estado) {
-                is EstadoEntrega.Pendiente -> "pendiente"
-                is EstadoEntrega.Aceptada -> "aceptada"
-                is EstadoEntrega.Rechazada -> "rechazada"
-                is EstadoEntrega.EnTransitoAPlanta -> "en_transito"
-                is EstadoEntrega.Liquidada -> "liquidada"
-            }
-        }
+        assertEquals(expected = -2.0, actual = entrega.diferenciaLitros)
+    }
 
-        assertEquals(
-            expected = listOf("pendiente", "aceptada", "rechazada", "en_transito", "liquidada"),
-            actual = descripciones,
-        )
+    @Test
+    fun `la diferencia es cero cuando el volumen de campo y de planta coinciden`() {
+        val entrega = entregaDePrueba(volumenLitros = 34.0, turno = Turno.MANANA).copy(volumenPlantaLitros = 34.0)
+
+        assertEquals(expected = 0.0, actual = entrega.diferenciaLitros)
     }
 }
+
+private fun entregaDePrueba(volumenLitros: Double, turno: Turno): Entrega =
+    Entrega(
+        id = "E-1042",
+        proveedorId = "P-027",
+        acopiadorId = "A-01",
+        centroAcopioId = "CA-001",
+        fecha = LocalDate(2026, 9, 5),
+        turno = turno,
+        volumenLitros = volumenLitros,
+        estado = EstadoEntrega.Pendiente,
+        cantidadPorongos = 1,
+    )

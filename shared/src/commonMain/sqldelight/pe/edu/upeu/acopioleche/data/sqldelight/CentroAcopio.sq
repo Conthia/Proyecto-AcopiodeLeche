@@ -1,0 +1,21 @@
+CREATE TABLE CentroAcopioEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    ubicacion TEXT NOT NULL,
+    capacidadLitrosDia REAL NOT NULL,
+    activo INTEGER NOT NULL,
+    capacidadTanqueLitros REAL NOT NULL
+);
+
+selectTodos:
+SELECT * FROM CentroAcopioEntity;
+
+insertar:
+INSERT OR REPLACE INTO CentroAcopioEntity(id, nombre, ubicacion, capacidadLitrosDia, activo, capacidadTanqueLitros)
+VALUES (?, ?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM CentroAcopioEntity;
+
+eliminar:
+DELETE FROM CentroAcopioEntity WHERE id = ?;

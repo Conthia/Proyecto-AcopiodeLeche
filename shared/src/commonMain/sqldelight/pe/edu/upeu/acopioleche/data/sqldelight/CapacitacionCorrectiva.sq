@@ -1,0 +1,14 @@
+CREATE TABLE CapacitacionCorrectivaEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    proveedorId TEXT NOT NULL,
+    motivo TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    atendida INTEGER NOT NULL
+);
+
+selectPendientes:
+SELECT * FROM CapacitacionCorrectivaEntity WHERE atendida = 0 ORDER BY fecha DESC;
+
+insertar:
+INSERT OR REPLACE INTO CapacitacionCorrectivaEntity(id, proveedorId, motivo, fecha, atendida)
+VALUES (?, ?, ?, ?, ?);

@@ -1,0 +1,34 @@
+CREATE TABLE UsuarioEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    nombreUsuario TEXT NOT NULL,
+    contrasenaHash TEXT NOT NULL,
+    contrasenaSal TEXT NOT NULL,
+    rol TEXT NOT NULL,
+    nombreCompleto TEXT NOT NULL,
+    centroAcopioId TEXT,
+    intentosFallidos INTEGER NOT NULL,
+    ultimoIntentoFallidoEn TEXT,
+    proveedorId TEXT
+);
+
+selectPorNombreUsuario:
+SELECT * FROM UsuarioEntity WHERE nombreUsuario = ? COLLATE NOCASE;
+
+selectPorId:
+SELECT * FROM UsuarioEntity WHERE id = ?;
+
+selectTodos:
+SELECT * FROM UsuarioEntity;
+
+insertar:
+INSERT OR REPLACE INTO UsuarioEntity(id, nombreUsuario, contrasenaHash, contrasenaSal, rol, nombreCompleto, centroAcopioId, intentosFallidos, ultimoIntentoFallidoEn, proveedorId)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+actualizarIntentoFallido:
+UPDATE UsuarioEntity SET intentosFallidos = ?, ultimoIntentoFallidoEn = ? WHERE id = ?;
+
+reiniciarIntentos:
+UPDATE UsuarioEntity SET intentosFallidos = 0, ultimoIntentoFallidoEn = NULL WHERE id = ?;
+
+contarFilas:
+SELECT COUNT(*) FROM UsuarioEntity;

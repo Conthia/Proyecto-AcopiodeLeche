@@ -1,0 +1,17 @@
+CREATE TABLE PrecioTemporadaEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    nombreTemporada TEXT NOT NULL,
+    fechaInicio TEXT NOT NULL,
+    fechaFin TEXT NOT NULL,
+    precioPorLitro REAL NOT NULL
+);
+
+selectTodos:
+SELECT * FROM PrecioTemporadaEntity ORDER BY fechaInicio DESC;
+
+insertar:
+INSERT OR REPLACE INTO PrecioTemporadaEntity(id, nombreTemporada, fechaInicio, fechaFin, precioPorLitro)
+VALUES (?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM PrecioTemporadaEntity;

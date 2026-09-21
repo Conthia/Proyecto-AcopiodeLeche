@@ -1,0 +1,65 @@
+CREATE TABLE ProveedorEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    documento TEXT NOT NULL,
+    telefono TEXT NOT NULL,
+    sector TEXT NOT NULL,
+    entregaDirectaEnPlanta INTEGER NOT NULL,
+    numeroVacas INTEGER NOT NULL,
+    calificacion TEXT NOT NULL,
+    activo INTEGER NOT NULL DEFAULT 1,
+    -- Sincronización offline-first con el backend Laravel (piloto Fase 1, ver
+    -- data/sync/ProveedorSyncManager.kt). synced = 0 mientras el registro tenga cambios locales
+    -- que el servidor todavía no confirmó. pendingAction identifica qué operación falta enviar
+    -- (CREAR/ACTUALIZAR/ELIMINAR); es NULL cuando el registro está sincronizado.
+    synced INTEGER NOT NULL DEFAULT 0,
+    pendingAction TEXT,
+    updatedAt TEXT NOT NULL DEFAULT '',
+    -- Tumba lógica: un ELIMINAR pendiente se marca aquí en vez de borrar la fila de una vez,
+    -- para no perder el registro de "hay que avisarle al servidor" mientras no haya conexión.
+    -- Se borra físicamente (ver `eliminar`) recién cuando el servidor confirma el borrado.
+    deleted INTEGER NOT NULL DEFAULT 0
+);
+
+-- Ruta de reparto: qué proveedores atiende cada acopiador. La versión en memoria
+-- (FakeProveedorRepository) la tenía como un mapa hardcodeado en Kotlin; al persistir de verdad
+-- pasa a ser una tabla, con la misma asignación de ejemplo.
+CREATE TABLE RutaAcopiadorEntity (
+    acopiadorId TEXT NOT NULL,
+    proveedorId TEXT NOT NULL,
+    PRIMARY KEY (acopiadorId, proveedorId)
+);
+
+selectTodos:
+SELECT * FROM ProveedorEntity WHERE deleted = 0;
+
+selectDeRuta:
+SELECT ProveedorEntity.* FROM ProveedorEntity
+INNER JOIN RutaAcopiadorEntity ON RutaAcopiadorEntity.proveedorId = ProveedorEntity.id
+WHERE RutaAcopiadorEntity.acopiadorId = ? AND ProveedorEntity.deleted = 0;
+
+selectPorId:
+SELECT * FROM ProveedorEntity WHERE id = ?;
+
+selectPendientes:
+SELECT * FROM ProveedorEntity WHERE synced = 0;
+
+insertar:
+INSERT OR REPLACE INTO ProveedorEntity(id, nombre, documento, telefono, sector, entregaDirectaEnPlanta, numeroVacas, calificacion, activo, synced, pendingAction, updatedAt, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+marcarSincronizado:
+UPDATE ProveedorEntity SET synced = 1, pendingAction = NULL, updatedAt = :updatedAt WHERE id = :id;
+
+marcarPendienteEliminacion:
+UPDATE ProveedorEntity SET deleted = 1, synced = 0, pendingAction = 'ELIMINAR', updatedAt = :updatedAt WHERE id = :id;
+
+insertarRuta:
+INSERT OR IGNORE INTO RutaAcopiadorEntity(acopiadorId, proveedorId)
+VALUES (?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM ProveedorEntity;
+
+eliminar:
+DELETE FROM ProveedorEntity WHERE id = ?;

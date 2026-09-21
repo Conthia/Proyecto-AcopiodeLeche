@@ -1,0 +1,18 @@
+-- Migración v2 -> v3. UsuarioEntity.proveedorId (agregado para el login del rol PRODUCTOR,
+-- RF-38 / Fase E — ver docs/modelo-dominio.md §8) se sumó al CREATE TABLE de Usuario.sq
+-- editando directamente el 1.sqm ya existente, en vez de agregar un archivo .sqm nuevo. Eso
+-- repite exactamente el problema que la cabecera de 1.sqm ya advertía:
+--   1) El CREATE TABLE IF NOT EXISTS de 1.sqm no hace nada en un dispositivo donde
+--      UsuarioEntity ya existe (como el celular de prueba, que ya había llegado a version=2
+--      con el fix de ProveedorEntity) — IF NOT EXISTS nunca agrega columnas a una tabla
+--      existente.
+--   2) Aunque lo hiciera, la versión de esquema calculada (1 + cantidad de archivos .sqm) no
+--      cambia al editar el CONTENIDO de 1.sqm, así que SQLiteOpenHelper.onUpgrade() nunca se
+--      vuelve a invocar en ese dispositivo: se queda con un UsuarioEntity sin proveedorId
+--      indefinidamente, sin importar cuántas veces se reabra la app.
+-- Este archivo revierte 1.sqm a lo que de verdad dejó en esa versión (UsuarioEntity sin
+-- proveedorId, ver el cambio hermano en 1.sqm) y agrega la columna acá, con ALTER, que sí
+-- actúa sobre una tabla que ya existe. Con esto, un dispositivo en version=2 recibe un
+-- onUpgrade real (2 -> 3) la próxima vez que abra la app actualizada.
+
+ALTER TABLE UsuarioEntity ADD COLUMN proveedorId TEXT;

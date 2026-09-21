@@ -1,0 +1,21 @@
+CREATE TABLE ProduccionDerivadoEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    tipoProducto TEXT NOT NULL,
+    codigoLote TEXT NOT NULL,
+    cantidadUnidades REAL NOT NULL,
+    fechaProduccion TEXT NOT NULL,
+    responsableId TEXT NOT NULL
+);
+
+selectTodos:
+SELECT * FROM ProduccionDerivadoEntity ORDER BY fechaProduccion DESC;
+
+insertar:
+INSERT OR REPLACE INTO ProduccionDerivadoEntity(id, tipoProducto, codigoLote, cantidadUnidades, fechaProduccion, responsableId)
+VALUES (?, ?, ?, ?, ?, ?);
+
+eliminar:
+DELETE FROM ProduccionDerivadoEntity WHERE id = ?;
+
+contarFilas:
+SELECT COUNT(*) FROM ProduccionDerivadoEntity;

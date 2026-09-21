@@ -1,25 +1,30 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     alias(libs.plugins.kotlinJvm)
-    application
+    alias(libs.plugins.kotlinCompose)
+    alias(libs.plugins.composeMultiplatform)
 }
 
 kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_11
-    }
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    jvmToolchain(21)
 }
 
 dependencies {
     implementation(project(":shared"))
+
+    implementation(compose.desktop.currentOs)
+    implementation(compose.material3)
 }
 
-application {
-    mainClass.set("pe.edu.upeu.acopioleche.desktop.MainKt")
+compose.desktop {
+    application {
+        mainClass = "pe.edu.upeu.acopioleche.MainKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "AcopioLeche"
+            packageVersion = "2.0.0"
+        }
+    }
 }

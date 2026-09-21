@@ -1,0 +1,21 @@
+-- EstadoConexion (sealed interface) se aplana: estadoConexionTipo es el discriminador y
+-- estadoConexionDias cubre tanto Pendiente.diasSinSincronizar como SinConexion.dias (son
+-- mutuamente excluyentes según el tipo, así que comparten una sola columna).
+CREATE TABLE EquipoCampoEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    centroAcopioId TEXT NOT NULL,
+    estadoConexionTipo TEXT NOT NULL,
+    estadoConexionDias INTEGER
+);
+
+selectTodos:
+SELECT * FROM EquipoCampoEntity;
+
+insertar:
+INSERT OR REPLACE INTO EquipoCampoEntity(id, nombre, tipo, centroAcopioId, estadoConexionTipo, estadoConexionDias)
+VALUES (?, ?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM EquipoCampoEntity;

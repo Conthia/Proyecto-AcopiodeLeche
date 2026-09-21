@@ -1,0 +1,22 @@
+CREATE TABLE ReunionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    tipo TEXT NOT NULL,
+    tema TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    horaInicioMinutos INTEGER NOT NULL,
+    horaFinMinutos INTEGER NOT NULL,
+    lugar TEXT NOT NULL
+);
+
+selectTodas:
+SELECT * FROM ReunionEntity ORDER BY fecha DESC;
+
+insertar:
+INSERT OR REPLACE INTO ReunionEntity(id, tipo, tema, fecha, horaInicioMinutos, horaFinMinutos, lugar)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM ReunionEntity;
+
+eliminar:
+DELETE FROM ReunionEntity WHERE id = ?;

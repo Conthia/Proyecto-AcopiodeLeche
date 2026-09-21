@@ -1,15 +1,14 @@
 package pe.edu.upeu.acopioleche.domain.model
 
+import kotlinx.datetime.LocalDateTime
+
 data class AnalisisCalidad(
     val id: String,
     val entregaId: String,
     val tecnicoId: String,
-    val fecha: String,
+    val fecha: LocalDateTime,
     val resultado: ResultadoAnalisis,
-) {
-    init {
-        require(entregaId.isNotBlank()) { "El analisis de calidad debe estar asociado a una entrega" }
-        require(tecnicoId.isNotBlank()) { "El analisis de calidad debe registrar un tecnico" }
-        require(fecha.isNotBlank()) { "El analisis de calidad debe registrar una fecha" }
-    }
-}
+    val criterioSeleccion: CriterioAnalisis = CriterioAnalisis.ALEATORIO,
+    val origenDato: OrigenDatoAnalisis = OrigenDatoAnalisis.INGRESO_MANUAL,
+    val firmaProductorPresente: Boolean = true,
+)

@@ -1,0 +1,20 @@
+-- SancionAplicada (sealed interface) se aplana: tipo es el discriminador; semanaInicio es de
+-- ReduccionPrecioSemanal, montoMulta es de RetiroPorAdulteracion.
+CREATE TABLE SancionAplicadaEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    proveedorId TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    semanaInicio TEXT,
+    montoMulta REAL
+);
+
+selectDeProveedor:
+SELECT * FROM SancionAplicadaEntity WHERE proveedorId = ? ORDER BY fecha DESC;
+
+selectTodas:
+SELECT * FROM SancionAplicadaEntity ORDER BY fecha DESC;
+
+insertar:
+INSERT OR REPLACE INTO SancionAplicadaEntity(id, proveedorId, fecha, tipo, semanaInicio, montoMulta)
+VALUES (?, ?, ?, ?, ?, ?);

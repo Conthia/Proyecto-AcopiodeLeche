@@ -1,19 +1,36 @@
+# Gradle
+.gradle/
+build/
+*/build/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin / KMP
+.kotlin/
+*.hprof
+.cxx/
+
+# Android Studio / IntelliJ
+.idea/
 *.iml
-.kotlin
-.gradle
-**/build/
-xcuserdata
-!src/**/build/
+*.ipr
+*.iws
+.navigation/
+captures/
+.externalNativeBuild/
+
+# Configuración local (rutas de máquina, nunca subir)
 local.properties
-.idea
+
+# Credenciales y secretos — nunca deben subirse al repo
+*.keystore
+*.jks
+.env
+.env.*
+*.pem
+*.p12
+secrets.properties
+
+# Sistema operativo
 .DS_Store
-captures
-.externalNativeBuild
-.cxx
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcodeproj/project.xcworkspace/
-!*.xcworkspace/contents.xcworkspacedata
-**/xcshareddata/WorkspaceSettings.xcsettings
-node_modules/
+Thumbs.db

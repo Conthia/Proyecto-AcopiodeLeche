@@ -1,0 +1,20 @@
+CREATE TABLE InsumoLacteoEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    nombreInsumo TEXT NOT NULL,
+    cantidad REAL NOT NULL,
+    unidadMedida TEXT NOT NULL,
+    fechaIngreso TEXT NOT NULL
+);
+
+selectTodos:
+SELECT * FROM InsumoLacteoEntity ORDER BY fechaIngreso DESC;
+
+insertar:
+INSERT OR REPLACE INTO InsumoLacteoEntity(id, nombreInsumo, cantidad, unidadMedida, fechaIngreso)
+VALUES (?, ?, ?, ?, ?);
+
+eliminar:
+DELETE FROM InsumoLacteoEntity WHERE id = ?;
+
+contarFilas:
+SELECT COUNT(*) FROM InsumoLacteoEntity;

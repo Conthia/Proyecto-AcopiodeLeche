@@ -1,0 +1,33 @@
+CREATE TABLE AnalisisCalidadEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    entregaId TEXT NOT NULL,
+    tecnicoId TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    resultadoTipo TEXT NOT NULL,
+    densidad REAL,
+    acidez REAL,
+    grasa REAL,
+    proteina REAL,
+    lactosa REAL,
+    temperatura REAL,
+    ph REAL,
+    motivo TEXT,
+    valorMedido REAL,
+    rangoMin REAL,
+    rangoMax REAL,
+    indicio TEXT,
+    porcentajeAgua REAL,
+    criterioSeleccion TEXT,
+    origenDato TEXT,
+    firmaProductorPresente INTEGER NOT NULL DEFAULT 1
+);
+
+selectRecientes:
+SELECT * FROM AnalisisCalidadEntity ORDER BY fecha DESC;
+
+insertar:
+INSERT OR REPLACE INTO AnalisisCalidadEntity(id, entregaId, tecnicoId, fecha, resultadoTipo, densidad, acidez, grasa, proteina, lactosa, temperatura, ph, motivo, valorMedido, rangoMin, rangoMax, indicio, porcentajeAgua, criterioSeleccion, origenDato, firmaProductorPresente)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM AnalisisCalidadEntity;

@@ -1,0 +1,21 @@
+-- UNIQUE(reunionId, actorId) reproduce el dedup que hacía FakeAsistenciaRepository.marcar()
+-- filtrando por esa pareja antes de agregar: INSERT OR REPLACE reemplaza la fila existente
+-- (por id o por esta pareja) en vez de duplicarla.
+CREATE TABLE AsistenciaEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    reunionId TEXT NOT NULL,
+    actorId TEXT NOT NULL,
+    tipoActor TEXT NOT NULL,
+    presente INTEGER NOT NULL,
+    UNIQUE (reunionId, actorId)
+);
+
+selectPorReunion:
+SELECT * FROM AsistenciaEntity WHERE reunionId = ?;
+
+marcar:
+INSERT OR REPLACE INTO AsistenciaEntity(id, reunionId, actorId, tipoActor, presente)
+VALUES (?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM AsistenciaEntity;

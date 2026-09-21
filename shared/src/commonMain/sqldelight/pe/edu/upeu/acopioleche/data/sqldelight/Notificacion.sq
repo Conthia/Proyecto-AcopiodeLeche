@@ -1,0 +1,25 @@
+CREATE TABLE NotificacionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    destinatarioId TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    mensaje TEXT NOT NULL,
+    fechaEnvio TEXT NOT NULL,
+    sonidoDistintivo INTEGER NOT NULL,
+    leida INTEGER NOT NULL
+);
+
+selectTodas:
+SELECT * FROM NotificacionEntity ORDER BY fechaEnvio DESC;
+
+selectDeDestinatario:
+SELECT * FROM NotificacionEntity WHERE destinatarioId = ? ORDER BY fechaEnvio DESC;
+
+insertar:
+INSERT OR REPLACE INTO NotificacionEntity(id, destinatarioId, tipo, mensaje, fechaEnvio, sonidoDistintivo, leida)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+marcarLeida:
+UPDATE NotificacionEntity SET leida = 1 WHERE id = ?;
+
+contarFilas:
+SELECT COUNT(*) FROM NotificacionEntity;

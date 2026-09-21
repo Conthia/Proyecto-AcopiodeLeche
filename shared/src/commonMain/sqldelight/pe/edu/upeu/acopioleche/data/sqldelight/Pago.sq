@@ -1,0 +1,23 @@
+CREATE TABLE PagoEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    liquidacionId TEXT NOT NULL,
+    proveedorId TEXT NOT NULL,
+    monto REAL NOT NULL,
+    fechaHora TEXT NOT NULL,
+    encargadoId TEXT NOT NULL,
+    metodoPago TEXT NOT NULL,
+    notas TEXT NOT NULL
+);
+
+selectTodos:
+SELECT * FROM PagoEntity ORDER BY fechaHora DESC;
+
+selectPorProveedor:
+SELECT * FROM PagoEntity WHERE proveedorId = ? ORDER BY fechaHora DESC;
+
+insertar:
+INSERT OR REPLACE INTO PagoEntity(id, liquidacionId, proveedorId, monto, fechaHora, encargadoId, metodoPago, notas)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+contarFilas:
+SELECT COUNT(*) FROM PagoEntity;

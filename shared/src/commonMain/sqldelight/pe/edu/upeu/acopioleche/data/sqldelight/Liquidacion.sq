@@ -1,0 +1,25 @@
+CREATE TABLE LiquidacionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    proveedorId TEXT NOT NULL,
+    semanaInicio TEXT NOT NULL,
+    litrosAceptados REAL NOT NULL,
+    montoBruto REAL NOT NULL,
+    montoFinal REAL NOT NULL,
+    tieneSancionPendienteDeMonto INTEGER NOT NULL,
+    fechaPago TEXT NOT NULL,
+    generadaAutomaticamente INTEGER NOT NULL,
+    UNIQUE (proveedorId, semanaInicio)
+);
+
+selectDeProveedor:
+SELECT * FROM LiquidacionEntity WHERE proveedorId = ? ORDER BY semanaInicio DESC;
+
+selectTodas:
+SELECT * FROM LiquidacionEntity ORDER BY semanaInicio DESC;
+
+selectDeProveedorYSemana:
+SELECT * FROM LiquidacionEntity WHERE proveedorId = ? AND semanaInicio = ?;
+
+insertar:
+INSERT OR REPLACE INTO LiquidacionEntity(id, proveedorId, semanaInicio, litrosAceptados, montoBruto, montoFinal, tieneSancionPendienteDeMonto, fechaPago, generadaAutomaticamente)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

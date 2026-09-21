@@ -1,17 +1,19 @@
 package pe.edu.upeu.acopioleche.domain.model
 
+import kotlinx.datetime.LocalDate
+
+/**
+ * horaInicioMinutos / horaFinMinutos: minutos desde medianoche (0..1439), para no acoplar el
+ * dominio a un tipo de hora con zona horaria cuando solo se necesita comparar duración dentro
+ * del mismo día.
+ */
 data class Reunion(
     val id: String,
     val tipo: TipoEvento,
     val tema: String,
-    val fecha: String,
+    val fecha: LocalDate,
     val horaInicioMinutos: Int,
     val horaFinMinutos: Int,
-) {
-    init {
-        require(tema.isNotBlank()) { "La reunion debe tener un tema" }
-        require(horaInicioMinutos in 0..1439) { "La hora de inicio debe estar dentro de un dia (0..1439)" }
-        require(horaFinMinutos in 0..1439) { "La hora de fin debe estar dentro de un dia (0..1439)" }
-        require(horaFinMinutos > horaInicioMinutos) { "La hora de fin debe ser posterior a la hora de inicio" }
-    }
-}
+    // EXTENSIÓN PROPUESTA — pendiente de validar con el interesado, no confirmado en la Matriz de Requerimientos
+    val lugar: String,
+)

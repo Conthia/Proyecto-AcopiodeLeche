@@ -1,0 +1,58 @@
+-- EstadoEntrega (sealed interface) se aplana en columnas: estadoTipo es el discriminador y el
+-- resto son nulas salvo para la variante que las usa. `sincronizada` es un detalle de esta
+-- implementación (cola de envío), no existe en el modelo de dominio `Entrega`.
+CREATE TABLE EntregaEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    proveedorId TEXT NOT NULL,
+    acopiadorId TEXT,
+    centroAcopioId TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    turno TEXT NOT NULL,
+    volumenLitros REAL NOT NULL,
+    cantidadPorongos INTEGER NOT NULL,
+    estadoTipo TEXT NOT NULL,
+    estadoMotivoRechazo TEXT,
+    estadoTransportistaId TEXT,
+    estadoHoraSalida TEXT,
+    estadoLiquidacionId TEXT,
+    sincronizada INTEGER NOT NULL,
+    -- RF-21 (conciliación campo-planta): segundo volumen medido al descargar en planta; nulo
+    -- hasta que se registre.
+    volumenPlantaLitros REAL,
+    estadoMotivoTexto TEXT,
+    estadoCanceladaPor TEXT,
+    estadoFechaHoraCancelacion TEXT
+);
+
+selectDeFecha:
+SELECT * FROM EntregaEntity WHERE fecha = ? ORDER BY id DESC;
+
+selectTodas:
+SELECT * FROM EntregaEntity ORDER BY fecha DESC, id DESC;
+
+selectPendientes:
+SELECT * FROM EntregaEntity WHERE sincronizada = 0 ORDER BY id DESC;
+
+selectPorProveedor:
+SELECT * FROM EntregaEntity WHERE proveedorId = ? ORDER BY fecha DESC, id DESC;
+
+selectPorId:
+SELECT * FROM EntregaEntity WHERE id = ?;
+
+insertar:
+INSERT OR REPLACE INTO EntregaEntity(id, proveedorId, acopiadorId, centroAcopioId, fecha, turno, volumenLitros, cantidadPorongos, estadoTipo, estadoMotivoRechazo, estadoTransportistaId, estadoHoraSalida, estadoLiquidacionId, sincronizada, volumenPlantaLitros, estadoMotivoTexto, estadoCanceladaPor, estadoFechaHoraCancelacion)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+eliminar:
+DELETE FROM EntregaEntity WHERE id = ?;
+
+-- Debe ejecutarse ANTES de marcarTodoSincronizado dentro de la misma transacción: una vez que
+-- sincronizada pasa a 1, esta condición ya no las reconocería como pendientes.
+aceptarPendientes:
+UPDATE EntregaEntity SET estadoTipo = 'ACEPTADA' WHERE sincronizada = 0 AND estadoTipo = 'PENDIENTE';
+
+marcarTodoSincronizado:
+UPDATE EntregaEntity SET sincronizada = 1 WHERE sincronizada = 0;
+
+contarFilas:
+SELECT COUNT(*) FROM EntregaEntity;
