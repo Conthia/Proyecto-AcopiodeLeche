@@ -54,7 +54,7 @@ class SqlLiquidacionRepositoryTest {
     }
 
     @Test
-    fun `precioPorLitroAplicado por defecto es 1_70 para una liquidacion que no lo especifica`() = runBlocking {
+    fun `precioPorLitroAplicado explicito de 1_70 sobrevive un viaje de ida y vuelta`() = runBlocking {
         val repo = abrirRepositorio()
         val liquidacion = Liquidacion(
             id = "LIQ-TEST-2",
@@ -66,6 +66,7 @@ class SqlLiquidacionRepositoryTest {
             tieneSancionPendienteDeMonto = false,
             fechaPago = LocalDate(2026, 9, 11),
             generadaAutomaticamente = true,
+            precioPorLitroAplicado = 1.70,
         )
 
         repo.registrar(liquidacion)

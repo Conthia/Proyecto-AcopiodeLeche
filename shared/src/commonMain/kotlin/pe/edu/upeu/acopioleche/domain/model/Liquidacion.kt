@@ -30,9 +30,12 @@ data class Liquidacion(
     /**
      * Precio por litro (S/) realmente usado para calcular [montoBruto] — se guarda para que una
      * liquidación ya generada no cambie de monto retroactivamente si después se agrega o edita un
-     * [PrecioTemporada] que hubiera aplicado a esa semana. Por defecto
-     * [ReglasNegocio.precioReferenciaPorLitro], el valor con el que se calcularon todas las
-     * liquidaciones antes de que este campo existiera (ver migración `3.sqm`).
+     * [PrecioTemporada] que hubiera aplicado a esa semana. Sin valor por defecto: cada call site
+     * lo pasa explícito, igual que los servicios de dominio reciben `ReglasNegocio` explícita (ver
+     * `ServiceLocator.reglasNegocio`, único lugar del código de producción que instancia
+     * `ReglasNegocio()`). Antes de que este campo existiera, todas las liquidaciones se calculaban
+     * con [ReglasNegocio.precioReferenciaPorLitro] (ver migración `3.sqm`, que usa ese mismo valor
+     * como `DEFAULT` de columna para las filas ya existentes).
      */
-    val precioPorLitroAplicado: Double = ReglasNegocio().precioReferenciaPorLitro,
+    val precioPorLitroAplicado: Double,
 )
