@@ -37,6 +37,7 @@ class SqlLiquidacionRepository(
             tieneSancionPendienteDeMonto = if (liquidacion.tieneSancionPendienteDeMonto) 1L else 0L,
             fechaPago = liquidacion.fechaPago.toString(),
             generadaAutomaticamente = if (liquidacion.generadaAutomaticamente) 1L else 0L,
+            precioPorLitroAplicado = liquidacion.precioPorLitroAplicado,
         )
     }
 
@@ -51,5 +52,6 @@ class SqlLiquidacionRepository(
             tieneSancionPendienteDeMonto = tieneSancionPendienteDeMonto != 0L,
             fechaPago = LocalDate.parse(fechaPago),
             generadaAutomaticamente = generadaAutomaticamente != 0L,
+            precioPorLitroAplicado = precioPorLitroAplicado,
         )
 }

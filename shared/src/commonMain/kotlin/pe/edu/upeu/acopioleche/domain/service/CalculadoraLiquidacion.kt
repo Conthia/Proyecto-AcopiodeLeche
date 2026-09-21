@@ -46,6 +46,7 @@ object CalculadoraLiquidacion {
             tieneSancionPendienteDeMonto = tieneSancionReduccionPendiente,
             fechaPago = CicloSemanal.fechaDePago(semanaInicio),
             generadaAutomaticamente = generadaAutomaticamente,
+            precioPorLitroAplicado = precioPorLitroVigente,
         )
     }
 }

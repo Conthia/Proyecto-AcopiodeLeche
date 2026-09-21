@@ -97,7 +97,7 @@ Por qué:
 
 **Tests:** buena cobertura en `domain/model` y `domain/service` (14 clases de test, incluye reglas de negocio complejas como `MotorSancionesTest`, `CalculadoraLiquidacionTest`, `PoliticaBloqueoLoginTest`). Cobertura débil en las otras capas:
 - Solo **2 de 23 ViewModels** tienen test (`LoginViewModelTest`, `RegistrarAnalisisViewModelTest`).
-- Solo **4 de 17 repositorios SQL** tienen test contra base de datos real (`SqlEntregaRepositoryTest`, `SqlRutaRepositoryTest`, `SqlUsuarioRepositoryTest`, `SqlPrecioTemporadaRepositoryTest`, todos en `desktopTest`) — los otros 13 (Proveedor, CentroAcopio, Liquidacion, Notificacion, Pago, ProduccionDerivado, Insumo, Sancion, CapacitacionCorrectiva, Asistencia, AnalisisCalidad, EquipoCampo, Reunion) solo se prueban indirectamente vía `Fake*Repository` (in-memory), que no valida el SQL real (mapeos de columnas, tipos, migraciones).
+- Solo **5 de 17 repositorios SQL** tienen test contra base de datos real (`SqlEntregaRepositoryTest`, `SqlRutaRepositoryTest`, `SqlUsuarioRepositoryTest`, `SqlPrecioTemporadaRepositoryTest`, `SqlLiquidacionRepositoryTest`, todos en `desktopTest`) — los otros 12 (Proveedor, CentroAcopio, Notificacion, Pago, ProduccionDerivado, Insumo, Sancion, CapacitacionCorrectiva, Asistencia, AnalisisCalidad, EquipoCampo, Reunion) solo se prueban indirectamente vía `Fake*Repository` (in-memory), que no valida el SQL real (mapeos de columnas, tipos, migraciones).
 - **0 tests de UI de Compose** (solo `AutorizadorNavTest.kt`, que prueba navegación/routing, no renderizado).
 
 ---
