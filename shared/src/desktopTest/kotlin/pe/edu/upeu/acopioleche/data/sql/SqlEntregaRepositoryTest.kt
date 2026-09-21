@@ -19,6 +19,7 @@ import pe.edu.upeu.acopioleche.data.sqldelight.AcopioLecheDatabase
 import pe.edu.upeu.acopioleche.domain.model.Entrega
 import pe.edu.upeu.acopioleche.domain.model.EstadoEntrega
 import pe.edu.upeu.acopioleche.domain.model.Turno
+import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
 
 /**
  * Verifica RNF-03 con la base real (no la Fake): los datos deben sobrevivir a un "reinicio" —
@@ -129,8 +130,8 @@ class SqlEntregaRepositoryTest {
         assertTrue(entregas.any { it.id == "E-TEST-2" })
     }
 
-    /** Lunes de la semana de [hoy], calculado igual que en `observarVolumenDeSemana`. */
-    private val lunesDeEstaSemana: LocalDate = hoy.minus(hoy.dayOfWeek.ordinal, DateTimeUnit.DAY)
+    /** Jueves que inicia el ciclo de acopio de [hoy] (jueves→miércoles), igual que `observarVolumenDeSemana`. */
+    private val inicioDeEsteCiclo: LocalDate = CicloSemanal.inicioDeSemana(hoy)
 
     private fun entregaEn(id: String, fecha: LocalDate, litros: Double) = Entrega(
         id = id,
@@ -144,44 +145,55 @@ class SqlEntregaRepositoryTest {
         cantidadPorongos = 1,
     )
 
-    private suspend fun poblarSemanaDePrueba(repo: SqlEntregaRepository) {
-        // Lunes: una entrega. Jueves: dos entregas (deben sumarse). Resto de la semana: sin datos.
-        repo.registrar(entregaEn("E-VOL-LUN", lunesDeEstaSemana, 10.0))
-        repo.registrar(entregaEn("E-VOL-JUE-1", lunesDeEstaSemana.plus(3, DateTimeUnit.DAY), 5.0))
-        repo.registrar(entregaEn("E-VOL-JUE-2", lunesDeEstaSemana.plus(3, DateTimeUnit.DAY), 7.0))
-        // Domingo de la semana ANTERIOR: no debe colarse en el rango lunes-domingo de esta semana.
-        repo.registrar(entregaEn("E-VOL-SEMANA-PASADA", lunesDeEstaSemana.minus(1, DateTimeUnit.DAY), 999.0))
+    private suspend fun poblarCicloDePrueba(repo: SqlEntregaRepository) {
+        // Jueves (dia 0): una entrega. Sabado (dia 2): dos entregas (deben sumarse). Resto del ciclo: sin datos.
+        repo.registrar(entregaEn("E-VOL-JUE", inicioDeEsteCiclo, 10.0))
+        repo.registrar(entregaEn("E-VOL-SAB-1", inicioDeEsteCiclo.plus(2, DateTimeUnit.DAY), 5.0))
+        repo.registrar(entregaEn("E-VOL-SAB-2", inicioDeEsteCiclo.plus(2, DateTimeUnit.DAY), 7.0))
+        // Miercoles del ciclo ANTERIOR: no debe colarse en el rango jueves-miercoles de este ciclo.
+        repo.registrar(entregaEn("E-VOL-CICLO-ANTERIOR", inicioDeEsteCiclo.minus(1, DateTimeUnit.DAY), 999.0))
     }
 
-    private val volumenEsperado = listOf(10.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0)
+    private val volumenEsperado = listOf(10.0, 0.0, 12.0, 0.0, 0.0, 0.0, 0.0)
 
     @Test
-    fun `observarVolumenDeSemana suma por dia y devuelve 0 en dias sin entregas cuando hoy es lunes`() = runBlocking {
+    fun `observarVolumenDeSemana suma por dia y devuelve 0 en dias sin entregas cuando hoy es jueves (primer dia del ciclo)`() = runBlocking {
         val repo = abrirRepositorio()
-        poblarSemanaDePrueba(repo)
+        poblarCicloDePrueba(repo)
 
-        val volumen = repo.observarVolumenDeSemana(hoy = lunesDeEstaSemana).first()
+        val volumen = repo.observarVolumenDeSemana(hoy = inicioDeEsteCiclo).first()
 
         assertEquals(expected = volumenEsperado, actual = volumen)
     }
 
     @Test
-    fun `observarVolumenDeSemana suma por dia y devuelve 0 en dias sin entregas cuando hoy es domingo`() = runBlocking {
+    fun `observarVolumenDeSemana suma por dia y devuelve 0 en dias sin entregas cuando hoy es miercoles (ultimo dia del ciclo)`() = runBlocking {
         val repo = abrirRepositorio()
-        poblarSemanaDePrueba(repo)
+        poblarCicloDePrueba(repo)
 
-        val domingoDeEstaSemana = lunesDeEstaSemana.plus(6, DateTimeUnit.DAY)
-        val volumen = repo.observarVolumenDeSemana(hoy = domingoDeEstaSemana).first()
+        val miercolesDeEsteCiclo = inicioDeEsteCiclo.plus(6, DateTimeUnit.DAY)
+        val volumen = repo.observarVolumenDeSemana(hoy = miercolesDeEsteCiclo).first()
 
         assertEquals(expected = volumenEsperado, actual = volumen)
     }
 
     @Test
-    fun `observarVolumenDeSemana no incluye entregas de la semana anterior`() = runBlocking {
+    fun `observarVolumenDeSemana suma por dia y devuelve 0 en dias sin entregas cuando hoy es un dia intermedio del ciclo (sabado)`() = runBlocking {
         val repo = abrirRepositorio()
-        poblarSemanaDePrueba(repo)
+        poblarCicloDePrueba(repo)
 
-        val volumen = repo.observarVolumenDeSemana(hoy = lunesDeEstaSemana).first()
+        val sabadoDeEsteCiclo = inicioDeEsteCiclo.plus(2, DateTimeUnit.DAY)
+        val volumen = repo.observarVolumenDeSemana(hoy = sabadoDeEsteCiclo).first()
+
+        assertEquals(expected = volumenEsperado, actual = volumen)
+    }
+
+    @Test
+    fun `observarVolumenDeSemana no incluye entregas del ciclo anterior`() = runBlocking {
+        val repo = abrirRepositorio()
+        poblarCicloDePrueba(repo)
+
+        val volumen = repo.observarVolumenDeSemana(hoy = inicioDeEsteCiclo).first()
 
         assertEquals(expected = 22.0, actual = volumen.sum())
     }
@@ -189,10 +201,24 @@ class SqlEntregaRepositoryTest {
     @Test
     fun `observarVolumenDeSemana suma dos entregas del mismo dia en un solo valor`() = runBlocking {
         val repo = abrirRepositorio()
-        poblarSemanaDePrueba(repo)
+        poblarCicloDePrueba(repo)
 
-        val volumen = repo.observarVolumenDeSemana(hoy = lunesDeEstaSemana).first()
+        val volumen = repo.observarVolumenDeSemana(hoy = inicioDeEsteCiclo).first()
 
-        assertEquals(expected = 12.0, actual = volumen[3]) // jueves: E-VOL-JUE-1 (5.0) + E-VOL-JUE-2 (7.0)
+        assertEquals(expected = 12.0, actual = volumen[2]) // sabado: E-VOL-SAB-1 (5.0) + E-VOL-SAB-2 (7.0)
+    }
+
+    @Test
+    fun `observarVolumenDeSemana no incluye el miercoles inmediatamente anterior ni el jueves inmediatamente posterior al ciclo`() = runBlocking {
+        val repo = abrirRepositorio()
+        repo.registrar(entregaEn("E-VOL-JUE", inicioDeEsteCiclo, 10.0))
+        // Ultimo dia del ciclo ANTERIOR (miercoles), un dia antes del inicio de este ciclo.
+        repo.registrar(entregaEn("E-VOL-MIE-BORDE-ANTERIOR", inicioDeEsteCiclo.minus(1, DateTimeUnit.DAY), 500.0))
+        // Primer dia del ciclo SIGUIENTE (jueves), un dia despues del cierre de este ciclo.
+        repo.registrar(entregaEn("E-VOL-JUE-BORDE-SIGUIENTE", inicioDeEsteCiclo.plus(7, DateTimeUnit.DAY), 700.0))
+
+        val volumen = repo.observarVolumenDeSemana(hoy = inicioDeEsteCiclo).first()
+
+        assertEquals(expected = 10.0, actual = volumen.sum())
     }
 }

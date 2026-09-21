@@ -16,21 +16,23 @@ import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
+import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
 import pe.edu.upeu.acopioleche.ui.theme.TextoSecundario
 import pe.edu.upeu.acopioleche.ui.theme.VerdeBorde
 import pe.edu.upeu.acopioleche.ui.theme.VerdeOscuro
 
-private val DIAS = listOf("L", "M", "M", "J", "V", "S", "D")
+private val DIAS = listOf("J", "V", "S", "D", "L", "M", "M")
 
 /**
- * [valores] está ordenado lunes→domingo (índice 0 = lunes), igual que
- * `EntregaRepository.observarVolumenUltimaSemana()`. El índice de "hoy" se calcula con la misma
- * fórmula (`dayOfWeek.ordinal`) para que el resaltado coincida con el día real, no un índice fijo.
+ * [valores] está ordenado según el ciclo de acopio jueves→miércoles (índice 0 = jueves de inicio
+ * del ciclo, ver [CicloSemanal]), igual que `EntregaRepository.observarVolumenUltimaSemana()`. El
+ * índice de "hoy" se calcula con `CicloSemanal.indiceEnCiclo()` para que el resaltado coincida
+ * con el día real dentro del ciclo, no un índice fijo.
  */
 @Composable
 fun VolumenSemanalChart(valores: List<Double>) {
     val maximo = (valores.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
-    val indiceHoy = Clock.System.todayIn(TimeZone.currentSystemDefault()).dayOfWeek.ordinal
+    val indiceHoy = CicloSemanal.indiceEnCiclo(Clock.System.todayIn(TimeZone.currentSystemDefault()))
 
     Row(
         modifier = Modifier.fillMaxWidth().height(130.dp),

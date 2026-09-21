@@ -2,7 +2,9 @@ package pe.edu.upeu.acopioleche.domain.service
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 class CicloSemanalTest {
 
@@ -43,5 +45,30 @@ class CicloSemanalTest {
         val viernesDePago = LocalDate(2026, 9, 11)
 
         assertEquals(expected = viernesDePago, actual = CicloSemanal.fechaDePago(jueves))
+    }
+
+    @Test
+    fun `indiceEnCiclo de un jueves es 0`() {
+        val jueves = LocalDate(2026, 9, 3)
+
+        assertEquals(expected = 0, actual = CicloSemanal.indiceEnCiclo(jueves))
+    }
+
+    @Test
+    fun `indiceEnCiclo de un miercoles es 6`() {
+        val miercoles = LocalDate(2026, 9, 9)
+
+        assertEquals(expected = 6, actual = CicloSemanal.indiceEnCiclo(miercoles))
+    }
+
+    @Test
+    fun `inicioDeSemana mas indiceEnCiclo reconstruye la fecha original, para las 7 fechas de un ciclo`() {
+        val juevesDeInicio = LocalDate(2026, 9, 3)
+
+        for (offset in 0..6) {
+            val fecha = juevesDeInicio.plus(offset, DateTimeUnit.DAY)
+            val reconstruida = CicloSemanal.inicioDeSemana(fecha).plus(CicloSemanal.indiceEnCiclo(fecha), DateTimeUnit.DAY)
+            assertEquals(expected = fecha, actual = reconstruida, message = "offset $offset")
+        }
     }
 }

@@ -15,9 +15,10 @@ interface EntregaRepository {
     fun observarPendientesDeSincronizar(): Flow<List<Entrega>>
 
     /**
-     * Volumen total (litros) por día de la semana calendario actual (lunes a domingo, índice 0 =
-     * lunes), con 0.0 en los días sin entregas registradas (incluidos los días futuros de la
-     * semana en curso, que todavía no tienen entregas).
+     * Volumen total (litros) por día del ciclo de acopio EN CURSO, jueves→miércoles (ver
+     * [pe.edu.upeu.acopioleche.domain.service.CicloSemanal]) — índice 0 = jueves de inicio del
+     * ciclo, índice 6 = miércoles de cierre —, con 0.0 en los días sin entregas registradas
+     * (incluidos los días futuros del ciclo en curso, que todavía no tienen entregas).
      */
     fun observarVolumenUltimaSemana(): Flow<List<Double>>
 
