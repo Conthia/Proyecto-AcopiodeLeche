@@ -18,13 +18,16 @@ import pe.edu.upeu.acopioleche.domain.model.EstadoEntrega
 import pe.edu.upeu.acopioleche.domain.model.Liquidacion
 import pe.edu.upeu.acopioleche.domain.model.PagoEntrega
 import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
+import pe.edu.upeu.acopioleche.domain.model.SancionAplicada
 import pe.edu.upeu.acopioleche.domain.repository.EntregaRepository
 import pe.edu.upeu.acopioleche.domain.repository.LiquidacionRepository
 import pe.edu.upeu.acopioleche.domain.repository.PagoRepository
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
+import pe.edu.upeu.acopioleche.domain.repository.SancionRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
+import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
 import pe.edu.upeu.acopioleche.presentation.proveedor.ProveedorConEntregas
 
@@ -33,6 +36,7 @@ class PagosHomeViewModel(
     private val liquidacionRepository: LiquidacionRepository,
     private val pagoRepository: PagoRepository,
     private val precioTemporadaRepository: PrecioTemporadaRepository,
+    private val sancionRepository: SancionRepository,
     proveedorRepository: ProveedorRepository,
     entregaRepository: EntregaRepository,
     private val encargadoId: String,
@@ -51,12 +55,15 @@ class PagosHomeViewModel(
     init {
         scope.launch {
             combine(
+                combine(
+                    entregaRepository.observarTodasLasEntregas(),
+                    sancionRepository.observarTodas(),
+                ) { todasLasEntregas, sanciones -> todasLasEntregas to sanciones },
                 liquidacionRepository.observarTodas(),
                 pagoRepository.observarPagos(),
                 precioTemporadaRepository.observarPrecios(),
                 proveedorRepository.observarProveedores(),
-                entregaRepository.observarTodasLasEntregas(),
-            ) { liquidacionesPersistidas, pagos, precios, proveedores, todasLasEntregas ->
+            ) { (todasLasEntregas, sanciones), liquidacionesPersistidas, pagos, precios, proveedores ->
                 val hoy = Clock.System.todayIn(TimeZone.currentSystemDefault())
                 val entregasHoy = todasLasEntregas.filter { it.fecha == hoy }
 
@@ -71,18 +78,17 @@ class PagosHomeViewModel(
                 val entregasPermitidas = todasLasEntregas.filter { provIdsPermitidos.contains(it.proveedorId) }
 
                 // RF-27: la liquidación de la semana en curso se calcula en vivo a partir de las
-                // entregas reales (litros × precio vigente en la fecha de CADA entrega, no un
-                // precio único para toda la semana) — antes dependía de que alguien generara la
-                // Liquidacion manualmente desde el panel de admin, así que una entrega recién
-                // registrada nunca aparecía aquí. Las semanas ya cerradas (persistidas) se respetan
-                // tal cual, incluidas las que ya tienen un pago registrado.
+                // entregas reales — antes dependía de que alguien generara la Liquidacion
+                // manualmente desde el panel de admin, así que una entrega recién registrada nunca
+                // aparecía aquí. Las semanas ya cerradas (persistidas) se respetan tal cual,
+                // incluidas las que ya tienen un pago registrado.
                 val semanaActual = CicloSemanal.inicioDeSemana(hoy)
                 val liquidacionesPersistidasPermitidas = liquidacionesPersistidas.filter { provIdsPermitidos.contains(it.proveedorId) }
                 val clavesYaPersistidas = liquidacionesPersistidasPermitidas.map { it.proveedorId to it.semanaInicio }.toSet()
 
                 val liquidacionesEnVivo = calcularLiquidacionesSemanaActual(
                     entregas = entregasPermitidas,
-                    precios = precios,
+                    sanciones = sanciones,
                     semanaInicio = semanaActual,
                 ).filter { (it.proveedorId to it.semanaInicio) !in clavesYaPersistidas }
 
@@ -161,38 +167,52 @@ class PagosHomeViewModel(
             entrega.estado !is EstadoEntrega.NoRecogida &&
             entrega.estado !is EstadoEntrega.Rechazada
 
-    private fun precioVigenteEn(precios: List<PrecioTemporada>, fecha: LocalDate): Double =
-        precios.filter { fecha >= it.fechaInicio && fecha <= it.fechaFin }
-            .maxByOrNull { it.fechaInicio }
-            ?.precioPorLitro
-            ?: CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO
-
-    /** Litros y monto por proveedor de la semana [semanaInicio] (jueves-miércoles, RF-06),
-     * calculados directamente de [entregas] reales — el monto suma litros × precio vigente en
-     * la fecha de CADA entrega, no un precio único para toda la semana. */
-    private fun calcularLiquidacionesSemanaActual(
+    /**
+     * Litros y monto por proveedor de la semana [semanaInicio] (jueves-miércoles, RF-06),
+     * calculados con la misma [CalculadoraLiquidacion] y el mismo precio (uno solo por semana,
+     * vía [CalculadoraLiquidacion.fechaReferenciaPrecio]) y la misma lógica de sanción (RN-10)
+     * que usa `LiquidacionesViewModel.generarPara` al generar la liquidación real — para que la
+     * vista en vivo de Pagos y una liquidación ya generada para la misma semana coincidan en
+     * `montoFinal`. `internal` (no `private`) para poder probarla directamente.
+     */
+    internal suspend fun calcularLiquidacionesSemanaActual(
         entregas: List<Entrega>,
-        precios: List<PrecioTemporada>,
+        sanciones: List<SancionAplicada>,
         semanaInicio: LocalDate,
     ): List<Liquidacion> {
         val finDeSemana = semanaInicio.plus(6, DateTimeUnit.DAY)
+        val fechaReferenciaPrecio = CalculadoraLiquidacion.fechaReferenciaPrecio(semanaInicio)
+        val precioVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferenciaPrecio)
+        if (precioVigente.esRespaldo) {
+            AppLogger.warn(
+                TAG,
+                "No hay PrecioTemporada vigente para $fechaReferenciaPrecio; usando el respaldo S/ ${precioVigente.precioPorLitro}/L",
+            )
+        }
+
         return entregas
             .filter { it.fecha in semanaInicio..finDeSemana && esEntregaContable(it) }
             .groupBy { it.proveedorId }
             .map { (proveedorId, entregasDelProveedor) ->
                 val litros = entregasDelProveedor.sumOf { it.volumenLitros }
-                val monto = entregasDelProveedor.sumOf { it.volumenLitros * precioVigenteEn(precios, it.fecha) }
-                Liquidacion(
+                val tieneSancionPendiente = sanciones.any { sancion ->
+                    sancion is SancionAplicada.ReduccionPrecioSemanal &&
+                        sancion.proveedorId == proveedorId &&
+                        sancion.semanaInicio == semanaInicio
+                }
+                CalculadoraLiquidacion.calcular(
                     id = "LIQ-$proveedorId-$semanaInicio",
                     proveedorId = proveedorId,
                     semanaInicio = semanaInicio,
                     litrosAceptados = litros,
-                    montoBruto = monto,
-                    montoFinal = monto,
-                    tieneSancionPendienteDeMonto = false,
-                    fechaPago = CicloSemanal.fechaDePago(semanaInicio),
+                    precioPorLitroVigente = precioVigente.precioPorLitro,
+                    tieneSancionReduccionPendiente = tieneSancionPendiente,
                     generadaAutomaticamente = true,
                 )
             }
+    }
+
+    private companion object {
+        const val TAG = "PagosHomeViewModel"
     }
 }
