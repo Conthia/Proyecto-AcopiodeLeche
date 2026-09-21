@@ -110,7 +110,7 @@ class RegistrarAnalisisViewModel(
         scope.launch {
             _uiState.value = _uiState.value.copy(guardando = true, mensajeError = null)
 
-            val resultado = EvaluadorCalidad.evaluar(lectura)
+            val resultado = EvaluadorCalidad.evaluar(lectura, reglasNegocio)
             val analisis = AnalisisCalidad(
                 id = "AC-${Clock.System.now().toEpochMilliseconds()}",
                 entregaId = entregaId,

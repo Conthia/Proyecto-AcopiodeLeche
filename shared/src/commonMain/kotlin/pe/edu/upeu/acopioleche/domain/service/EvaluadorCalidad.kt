@@ -19,24 +19,17 @@ import pe.edu.upeu.acopioleche.domain.model.ResultadoAnalisis
  *    se reporta el primero de la lista, no todos).
  * 3. Si ninguno falla, es normal (`acidez` se guarda en 0.0: no la mide el dispositivo real).
  *
- * TODO: los rangos de [RangosPermitidos] son valores de ejemplo (típicos de leche cruda de
- * vaca), pendientes de confirmar con el interesado o el laboratorio de la planta antes de un
- * uso real. `porcentajeAguaAnadida > 0.0` como umbral de adulteración es una decisión técnica
- * razonable (el dispositivo debería reportar 0 % en leche pura), no un valor pedido; el 5% de
- * las reglas de sanción (Fase 4, RN-10/11/12) decide la severidad, no si hay o no adulteración.
+ * Los rangos de calidad (RF-04/RF-05, SUPUESTOS — del equipo, no del cliente ni del laboratorio)
+ * vienen de [pe.edu.upeu.acopioleche.domain.service.ReglasNegocio.rangosCalidad], no de un
+ * `object` interno — ver ese archivo para la clasificación completa. `porcentajeAguaAnadida >
+ * 0.0` como umbral de adulteración es una decisión técnica razonable (el dispositivo debería
+ * reportar 0 % en leche pura), no un valor pedido; el umbral de
+ * [ReglasNegocio.umbralAdulteracionGravePorcentaje] decide la severidad, no si hay o no
+ * adulteración.
  */
 object EvaluadorCalidad {
 
-    object RangosPermitidos {
-        val DENSIDAD: ClosedRange<Double> = 1.028..1.034
-        val GRASA: ClosedRange<Double> = 3.0..6.0
-        val PROTEINA: ClosedRange<Double> = 2.9..3.8
-        val LACTOSA: ClosedRange<Double> = 4.0..5.0
-        val TEMPERATURA: ClosedRange<Double> = 0.0..10.0
-        val PH: ClosedRange<Double> = 6.6..6.8
-    }
-
-    fun evaluar(lectura: LecturaLactoescan): ResultadoAnalisis {
+    fun evaluar(lectura: LecturaLactoescan, reglas: ReglasNegocio): ResultadoAnalisis {
         if (lectura.porcentajeAguaAnadida > 0.0) {
             return ResultadoAnalisis.Adulterada(
                 indicio = "Agua añadida detectada: ${lectura.porcentajeAguaAnadida} %",
@@ -44,13 +37,14 @@ object EvaluadorCalidad {
             )
         }
 
+        val rangos = reglas.rangosCalidad
         val parametros = listOf(
-            Triple(lectura.densidad, RangosPermitidos.DENSIDAD, MotivoRechazo.DENSIDAD_FUERA_DE_RANGO),
-            Triple(lectura.grasa, RangosPermitidos.GRASA, MotivoRechazo.GRASA_FUERA_DE_RANGO),
-            Triple(lectura.proteina, RangosPermitidos.PROTEINA, MotivoRechazo.PROTEINA_FUERA_DE_RANGO),
-            Triple(lectura.lactosa, RangosPermitidos.LACTOSA, MotivoRechazo.LACTOSA_FUERA_DE_RANGO),
-            Triple(lectura.temperatura, RangosPermitidos.TEMPERATURA, MotivoRechazo.TEMPERATURA_FUERA_DE_RANGO),
-            Triple(lectura.ph, RangosPermitidos.PH, MotivoRechazo.PH_FUERA_DE_RANGO),
+            Triple(lectura.densidad, rangos.densidad, MotivoRechazo.DENSIDAD_FUERA_DE_RANGO),
+            Triple(lectura.grasa, rangos.grasa, MotivoRechazo.GRASA_FUERA_DE_RANGO),
+            Triple(lectura.proteina, rangos.proteina, MotivoRechazo.PROTEINA_FUERA_DE_RANGO),
+            Triple(lectura.lactosa, rangos.lactosa, MotivoRechazo.LACTOSA_FUERA_DE_RANGO),
+            Triple(lectura.temperatura, rangos.temperatura, MotivoRechazo.TEMPERATURA_FUERA_DE_RANGO),
+            Triple(lectura.ph, rangos.ph, MotivoRechazo.PH_FUERA_DE_RANGO),
         )
 
         val primeroFueraDeRango = parametros.firstOrNull { (valor, rango, _) -> valor !in rango }
