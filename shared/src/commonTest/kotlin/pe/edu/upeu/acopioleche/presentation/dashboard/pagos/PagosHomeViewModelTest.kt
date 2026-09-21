@@ -24,7 +24,7 @@ import pe.edu.upeu.acopioleche.data.fake.FakeProveedorRepository
 import pe.edu.upeu.acopioleche.data.fake.FakeSancionRepository
 import pe.edu.upeu.acopioleche.domain.model.Entrega
 import pe.edu.upeu.acopioleche.domain.model.EstadoEntrega
-import pe.edu.upeu.acopioleche.domain.model.PrecioVigente
+import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
 import pe.edu.upeu.acopioleche.domain.model.SancionAplicada
 import pe.edu.upeu.acopioleche.domain.model.Turno
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
@@ -62,7 +62,7 @@ class PagosHomeViewModelTest {
         val entregaRepo = FakeEntregaRepository()
         entregaRepo.registrar(entregaDeLaSemana(id = "E-COMPARA-1", litros = 40.0))
         val sancionRepo = FakeSancionRepository()
-        val precioRepo = PrecioTemporadaRepositoryFijo(PrecioVigente(precioPorLitro = 1.90, esRespaldo = false))
+        val precioRepo = PrecioTemporadaRepositoryFijo(precioTemporadaFija(precioPorLitro = 1.90))
 
         val (montoLiquidaciones, montoPagos) = generarYCompararMontos(entregaRepo, sancionRepo, precioRepo)
 
@@ -83,7 +83,7 @@ class PagosHomeViewModelTest {
                 semanaInicio = semanaInicio,
             ),
         )
-        val precioRepo = PrecioTemporadaRepositoryFijo(PrecioVigente(precioPorLitro = 1.90, esRespaldo = false))
+        val precioRepo = PrecioTemporadaRepositoryFijo(precioTemporadaFija(precioPorLitro = 1.90))
 
         val (montoLiquidaciones, montoPagos) = generarYCompararMontos(entregaRepo, sancionRepo, precioRepo)
 
@@ -141,9 +141,19 @@ class PagosHomeViewModelTest {
 
     /** Devuelve siempre [precio], sin importar la fecha consultada. */
     private class PrecioTemporadaRepositoryFijo(
-        private val precio: PrecioVigente,
+        private val precio: PrecioTemporada,
         private val delegado: PrecioTemporadaRepository = FakePrecioTemporadaRepository(),
     ) : PrecioTemporadaRepository by delegado {
-        override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioVigente = precio
+        override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioTemporada = precio
+    }
+
+    private companion object {
+        fun precioTemporadaFija(precioPorLitro: Double): PrecioTemporada = PrecioTemporada(
+            id = "PT-FIJO",
+            nombreTemporada = "Fija para test",
+            fechaInicio = LocalDate(2000, 1, 1),
+            fechaFin = LocalDate(2100, 1, 1),
+            precioPorLitro = precioPorLitro,
+        )
     }
 }

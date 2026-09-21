@@ -1,7 +1,7 @@
 package pe.edu.upeu.acopioleche.domain.model
 
 import kotlinx.datetime.LocalDate
-import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
+import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 
 /**
  * Liquidación semanal de pago a un proveedor (RF-06/RF-07). La Parte A ya referenciaba este
@@ -10,9 +10,10 @@ import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
  * es un detalle técnico (ver docs/modelo-dominio.md, sección 1, mismo tratamiento que `Turno`).
  *
  * `montoFinal` es igual a `montoBruto` salvo que `tieneSancionPendienteDeMonto` sea `true`
- * (RN-10), en cuyo caso se le resta el % propuesto en
- * [pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion.PORCENTAJE_REDUCCION_POR_ADULTERACION_LEVE]
- * — nunca se le suma nada (ver el TODO de la bonificación por grasa, RN-14, ahí mismo).
+ * (RN-10), en cuyo caso se le resta el % de
+ * [pe.edu.upeu.acopioleche.domain.service.ReglasNegocio.porcentajeReduccionAdulteracionLeveProvisional]
+ * — nunca se le suma nada (ver [ReglasNegocio.bonificacionPorGrasaPorLitro], RN-14, todavía NO
+ * DEFINIDA).
  */
 data class Liquidacion(
     val id: String,
@@ -30,8 +31,8 @@ data class Liquidacion(
      * Precio por litro (S/) realmente usado para calcular [montoBruto] — se guarda para que una
      * liquidación ya generada no cambie de monto retroactivamente si después se agrega o edita un
      * [PrecioTemporada] que hubiera aplicado a esa semana. Por defecto
-     * [CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO], el valor con el que se calcularon
-     * todas las liquidaciones antes de que este campo existiera (ver migración `3.sqm`).
+     * [ReglasNegocio.precioReferenciaPorLitro], el valor con el que se calcularon todas las
+     * liquidaciones antes de que este campo existiera (ver migración `3.sqm`).
      */
-    val precioPorLitroAplicado: Double = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO,
+    val precioPorLitroAplicado: Double = ReglasNegocio().precioReferenciaPorLitro,
 )

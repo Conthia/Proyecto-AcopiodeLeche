@@ -5,13 +5,12 @@ import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import pe.edu.upeu.acopioleche.data.sqldelight.AcopioLecheDatabase
 import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
-import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 
 class SqlPrecioTemporadaRepositoryTest {
 
@@ -38,19 +37,18 @@ class SqlPrecioTemporadaRepositoryTest {
         // 15 de marzo de 2026 cae dentro de PT-2026-01 (Ene-Jun, S/1.60), sembrada al abrir la BD.
         val resultado = repo.obtenerPrecioVigenteEn(LocalDate(2026, 3, 15))
 
+        assertNotNull(resultado)
         assertEquals(expected = 1.60, actual = resultado.precioPorLitro)
-        assertFalse(resultado.esRespaldo)
     }
 
     @Test
-    fun `obtenerPrecioVigenteEn devuelve el respaldo cuando ninguna temporada cubre la fecha`() = runBlocking {
+    fun `obtenerPrecioVigenteEn devuelve null cuando ninguna temporada cubre la fecha`() = runBlocking {
         val repo = abrirRepositorio()
 
         // 1 de enero de 2027: fuera de las dos temporadas sembradas (ambas de 2026).
-        val resultado = repo.obtenerPrecioVigenteEn(LocalDate(2027, 1, 1))
-
-        assertEquals(expected = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, actual = resultado.precioPorLitro)
-        assertTrue(resultado.esRespaldo)
+        // El repositorio solo informa que no hay temporada vigente; el respaldo
+        // (ReglasNegocio.precioReferenciaPorLitro) lo decide el llamador, no el repositorio.
+        assertNull(repo.obtenerPrecioVigenteEn(LocalDate(2027, 1, 1)))
     }
 
     @Test
@@ -69,7 +67,7 @@ class SqlPrecioTemporadaRepositoryTest {
         // 15 de mayo de 2026 cae tanto en PT-2026-01 (Ene-Jun) como en PT-AJUSTE (Mayo).
         val resultado = repo.obtenerPrecioVigenteEn(LocalDate(2026, 5, 15))
 
+        assertNotNull(resultado)
         assertEquals(expected = 2.50, actual = resultado.precioPorLitro)
-        assertFalse(resultado.esRespaldo)
     }
 }

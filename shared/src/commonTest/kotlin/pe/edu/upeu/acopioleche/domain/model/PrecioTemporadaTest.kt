@@ -12,6 +12,7 @@ import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.time.Clock
 
 class PrecioTemporadaTest {
@@ -26,20 +27,22 @@ class PrecioTemporadaTest {
             val precioLluvias = repository.obtenerPrecioVigenteEn(fechaLluvias)
             val precioEstiaje = repository.obtenerPrecioVigenteEn(fechaEstiaje)
 
+            assertNotNull(precioLluvias)
+            assertNotNull(precioEstiaje)
             assertEquals(1.60, precioLluvias.precioPorLitro)
             assertEquals(1.90, precioEstiaje.precioPorLitro)
         }
     }
 
     @Test
-    fun obtenerPrecioVigenteEnUsaPrecioFallbackSiFechaCaeEnHueco() {
+    fun obtenerPrecioVigenteEnDevuelveNullSiFechaCaeEnHueco() {
         runBlocking {
             val repository = FakePrecioTemporadaRepository()
             val fechaSinTarifa = LocalDate(2028, 1, 1)
 
-            val precioFallback = repository.obtenerPrecioVigenteEn(fechaSinTarifa)
-            assertEquals(CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, precioFallback.precioPorLitro)
-            assertEquals(true, precioFallback.esRespaldo)
+            // El repositorio solo informa que no hay temporada vigente -- no decide ningun
+            // respaldo, eso es responsabilidad del llamador (ReglasNegocio.precioReferenciaPorLitro).
+            assertNull(repository.obtenerPrecioVigenteEn(fechaSinTarifa))
         }
     }
 

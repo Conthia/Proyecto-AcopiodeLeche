@@ -10,9 +10,7 @@ import kotlinx.datetime.LocalDate
 import pe.edu.upeu.acopioleche.data.sqldelight.AcopioLecheDatabase
 import pe.edu.upeu.acopioleche.data.sqldelight.PrecioTemporadaEntity
 import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
-import pe.edu.upeu.acopioleche.domain.model.PrecioVigente
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
-import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 
 class SqlPrecioTemporadaRepository(
     database: AcopioLecheDatabase,
@@ -29,16 +27,10 @@ class SqlPrecioTemporadaRepository(
     override fun observarPrecios(): Flow<List<PrecioTemporada>> =
         queries.selectTodos().asFlow().mapToList(Dispatchers.Default).map { filas -> filas.map { it.toDomain() } }
 
-    override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioVigente {
-        val precios = observarPrecios().first()
-        val coincidentes = precios.filter { fecha >= it.fechaInicio && fecha <= it.fechaFin }
-        val masReciente = coincidentes.maxByOrNull { it.fechaInicio }
-        return if (masReciente != null) {
-            PrecioVigente(precioPorLitro = masReciente.precioPorLitro, esRespaldo = false)
-        } else {
-            PrecioVigente(precioPorLitro = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, esRespaldo = true)
-        }
-    }
+    override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioTemporada? =
+        observarPrecios().first()
+            .filter { fecha >= it.fechaInicio && fecha <= it.fechaFin }
+            .maxByOrNull { it.fechaInicio }
 
     override suspend fun guardar(precio: PrecioTemporada) {
         guardarSync(precio)

@@ -9,10 +9,6 @@ import pe.edu.upeu.acopioleche.domain.model.Liquidacion
  * inventado.
  */
 object CalculadoraLiquidacion {
-    // Migra a ReglasNegocio.precioReferenciaPorLitro en el commit "Precio" de
-    // feature/reglas-negocio-config — se deja aquí todavía para no tocar dos veces la misma
-    // firma en la migración a ReglasNegocio (ver commit "Sanciones").
-    const val PRECIO_REFERENCIA_POR_LITRO: Double = 1.70
 
     /**
      * Fecha que decide qué [pe.edu.upeu.acopioleche.domain.model.PrecioTemporada] aplica a una
@@ -30,7 +26,7 @@ object CalculadoraLiquidacion {
         semanaInicio: LocalDate,
         litrosAceptados: Double,
         reglas: ReglasNegocio,
-        precioPorLitroVigente: Double = PRECIO_REFERENCIA_POR_LITRO,
+        precioPorLitroVigente: Double = reglas.precioReferenciaPorLitro,
         tieneSancionReduccionPendiente: Boolean = false,
         generadaAutomaticamente: Boolean = true,
     ): Liquidacion {

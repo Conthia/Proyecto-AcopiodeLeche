@@ -137,14 +137,15 @@ class LiquidacionesViewModel(
 
     private suspend fun obtenerPrecioPorLitroDeLaSemana(): Double {
         val fechaReferencia = CalculadoraLiquidacion.fechaReferenciaPrecio(semanaMostrada)
-        val precioVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferencia)
-        if (precioVigente.esRespaldo) {
+        val temporadaVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferencia)
+        if (temporadaVigente == null) {
             AppLogger.warn(
                 TAG,
-                "No hay PrecioTemporada vigente para $fechaReferencia; usando el respaldo S/ ${precioVigente.precioPorLitro}/L",
+                "No hay PrecioTemporada vigente para $fechaReferencia; usando el respaldo S/ ${reglasNegocio.precioReferenciaPorLitro}/L",
             )
+            return reglasNegocio.precioReferenciaPorLitro
         }
-        return precioVigente.precioPorLitro
+        return temporadaVigente.precioPorLitro
     }
 
     private suspend fun generarPara(proveedorId: String, automatica: Boolean, precioPorLitro: Double): Liquidacion {

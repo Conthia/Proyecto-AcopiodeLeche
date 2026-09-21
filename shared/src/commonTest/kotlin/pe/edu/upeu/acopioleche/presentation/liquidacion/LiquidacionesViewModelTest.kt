@@ -19,11 +19,10 @@ import pe.edu.upeu.acopioleche.data.fake.FakeNotificacionRepository
 import pe.edu.upeu.acopioleche.data.fake.FakePrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.data.fake.FakeProveedorRepository
 import pe.edu.upeu.acopioleche.data.fake.FakeSancionRepository
+import pe.edu.upeu.acopioleche.domain.model.PrecioTemporada
 import pe.edu.upeu.acopioleche.domain.model.Proveedor
-import pe.edu.upeu.acopioleche.domain.model.PrecioVigente
 import pe.edu.upeu.acopioleche.domain.repository.PrecioTemporadaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
-import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 import pe.edu.upeu.acopioleche.domain.service.ReglasNegocio
 import pe.edu.upeu.acopioleche.presentation.core.UiState
 
@@ -108,7 +107,7 @@ class LiquidacionesViewModelTest {
             liquidacionRepository = liquidacionRepo,
             notificacionRepository = FakeNotificacionRepository(),
             precioTemporadaRepository = PrecioTemporadaRepositoryFijo(
-                PrecioVigente(precioPorLitro = 2.20, esRespaldo = false),
+                precioTemporadaFija(precioPorLitro = 2.20),
             ),
             reglasNegocio = ReglasNegocio(),
         )
@@ -123,6 +122,7 @@ class LiquidacionesViewModelTest {
     @Test
     fun `onGenerarClick usa el respaldo cuando no hay precio de temporada vigente`() = runBlocking {
         val liquidacionRepo = FakeLiquidacionRepository()
+        val reglasNegocio = ReglasNegocio()
         val viewModel = LiquidacionesViewModel(
             scope = CoroutineScope(Dispatchers.Unconfined),
             proveedorRepository = FakeProveedorRepository(),
@@ -130,10 +130,8 @@ class LiquidacionesViewModelTest {
             sancionRepository = FakeSancionRepository(),
             liquidacionRepository = liquidacionRepo,
             notificacionRepository = FakeNotificacionRepository(),
-            precioTemporadaRepository = PrecioTemporadaRepositoryFijo(
-                PrecioVigente(precioPorLitro = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, esRespaldo = true),
-            ),
-            reglasNegocio = ReglasNegocio(),
+            precioTemporadaRepository = PrecioTemporadaRepositoryFijo(precio = null),
+            reglasNegocio = reglasNegocio,
         )
 
         viewModel.onGenerarClick()
@@ -141,14 +139,14 @@ class LiquidacionesViewModelTest {
         val generadas = liquidacionRepo.observarTodas().first()
         assertTrue(generadas.isNotEmpty())
         generadas.forEach {
-            assertEquals(expected = CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, actual = it.precioPorLitroAplicado)
+            assertEquals(expected = reglasNegocio.precioReferenciaPorLitro, actual = it.precioPorLitroAplicado)
         }
     }
 
     @Test
     fun `una liquidacion ya generada no cambia de monto si despues cambia el precio de temporada`() = runBlocking {
         val liquidacionRepo = FakeLiquidacionRepository()
-        val precioRepo = PrecioTemporadaRepositoryFijo(PrecioVigente(precioPorLitro = 1.70, esRespaldo = false))
+        val precioRepo = PrecioTemporadaRepositoryFijo(precioTemporadaFija(precioPorLitro = 1.70))
         val viewModel = LiquidacionesViewModel(
             scope = CoroutineScope(Dispatchers.Unconfined),
             proveedorRepository = FakeProveedorRepository(),
@@ -167,7 +165,7 @@ class LiquidacionesViewModelTest {
         // Cambia el precio vigente DESPUES de generar; las liquidaciones ya persistidas para esa
         // semana no deben regenerarse (cargar()/generarPara() son idempotentes: solo generan si
         // liquidacionRepository.buscar(...) devuelve null).
-        precioRepo.precio = PrecioVigente(precioPorLitro = 9.99, esRespaldo = false)
+        precioRepo.precio = precioTemporadaFija(precioPorLitro = 9.99)
         viewModel.onGenerarClick()
 
         val montosDespues = liquidacionRepo.observarTodas().first().associate { it.id to it.montoFinal }
@@ -201,11 +199,21 @@ class LiquidacionesViewModelTest {
         }
     }
 
-    /** Devuelve siempre [precio], sin importar la fecha consultada ni el catálogo sembrado. */
+    /** Devuelve siempre [precio] (o `null`), sin importar la fecha consultada ni el catálogo sembrado. */
     private class PrecioTemporadaRepositoryFijo(
-        var precio: PrecioVigente,
+        var precio: PrecioTemporada?,
         private val delegado: PrecioTemporadaRepository = FakePrecioTemporadaRepository(),
     ) : PrecioTemporadaRepository by delegado {
-        override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioVigente = precio
+        override suspend fun obtenerPrecioVigenteEn(fecha: LocalDate): PrecioTemporada? = precio
+    }
+
+    private companion object {
+        fun precioTemporadaFija(precioPorLitro: Double): PrecioTemporada = PrecioTemporada(
+            id = "PT-FIJO",
+            nombreTemporada = "Fija para test",
+            fechaInicio = LocalDate(2000, 1, 1),
+            fechaFin = LocalDate(2100, 1, 1),
+            precioPorLitro = precioPorLitro,
+        )
     }
 }

@@ -184,12 +184,15 @@ class PagosHomeViewModel(
     ): List<Liquidacion> {
         val finDeSemana = semanaInicio.plus(6, DateTimeUnit.DAY)
         val fechaReferenciaPrecio = CalculadoraLiquidacion.fechaReferenciaPrecio(semanaInicio)
-        val precioVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferenciaPrecio)
-        if (precioVigente.esRespaldo) {
+        val temporadaVigente = precioTemporadaRepository.obtenerPrecioVigenteEn(fechaReferenciaPrecio)
+        val precioPorLitro = if (temporadaVigente != null) {
+            temporadaVigente.precioPorLitro
+        } else {
             AppLogger.warn(
                 TAG,
-                "No hay PrecioTemporada vigente para $fechaReferenciaPrecio; usando el respaldo S/ ${precioVigente.precioPorLitro}/L",
+                "No hay PrecioTemporada vigente para $fechaReferenciaPrecio; usando el respaldo S/ ${reglasNegocio.precioReferenciaPorLitro}/L",
             )
+            reglasNegocio.precioReferenciaPorLitro
         }
 
         return entregas
@@ -208,7 +211,7 @@ class PagosHomeViewModel(
                     semanaInicio = semanaInicio,
                     litrosAceptados = litros,
                     reglas = reglasNegocio,
-                    precioPorLitroVigente = precioVigente.precioPorLitro,
+                    precioPorLitroVigente = precioPorLitro,
                     tieneSancionReduccionPendiente = tieneSancionPendiente,
                     generadaAutomaticamente = true,
                 )
