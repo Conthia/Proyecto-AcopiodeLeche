@@ -38,7 +38,7 @@ Entidades de datos (`data class`): `Proveedor`, `Acopiador`, `CentroAcopio`, `En
 
 | Extensión / Componente | Dónde | Detalle / Respaldo |
 |---|---|---|
-| `EcoLogo` | `androidApp/.../ui/common/EcoLogo.kt` | Logo institucional de EcoLácteos Huata dibujado en Canvas con cerros, sol y vaca de perfil. |
+| Logo institucional | `androidApp/.../res/drawable/logo_ecolacteos.png` (`docs/logo.png`) | Logo de EcoLácteos Huata como imagen estática (PNG), no como composable dibujado en Canvas. |
 | `PerfilScreen` | `androidApp/.../ui/perfil/PerfilScreen.kt` | Pantalla de perfil accesible desde la barra superior. Muestra datos del usuario logueado y el botón para cerrar sesión. |
 | Eliminación de `RoleSwitcherStrip` | `androidApp/.../ui/nav/` | Eliminado completamente. La navegación y barras inferiores responden exclusivamente al rol de la `SesionActiva`. |
 | Progreso de Turno + Ruta Pendiente | `AcopiadorHomeScreen` / `ViewModel` | RF-03: Muestra litros y entregas de hoy, acceso directo a nueva entrega y lista de proveedores de la ruta que aún no entregan hoy. |
