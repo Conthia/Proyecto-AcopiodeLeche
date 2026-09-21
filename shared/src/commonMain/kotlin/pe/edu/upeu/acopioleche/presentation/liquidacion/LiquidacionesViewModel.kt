@@ -1,6 +1,7 @@
 package pe.edu.upeu.acopioleche.presentation.liquidacion
 
 import kotlin.time.Clock
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
@@ -25,7 +27,9 @@ import pe.edu.upeu.acopioleche.domain.repository.SancionRepository
 import pe.edu.upeu.acopioleche.domain.service.CalculadoraLiquidacion
 import pe.edu.upeu.acopioleche.domain.service.CicloSemanal
 import pe.edu.upeu.acopioleche.domain.service.GeneradorNotificaciones
+import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 
 /**
  * RF-06/RF-07. No está confirmado si la liquidación se genera sola cada viernes o si un
@@ -50,28 +54,61 @@ class LiquidacionesViewModel(
     private val semanaMostrada = CicloSemanal.inicioDeSemana(Clock.System.todayIn(TimeZone.currentSystemDefault()))
         .minus(7, DateTimeUnit.DAY)
 
-    private val _uiState = MutableStateFlow(
-        LiquidacionesUiState(semanaInicio = semanaMostrada, fechaPago = CicloSemanal.fechaDePago(semanaMostrada)),
-    )
-    val uiState: StateFlow<LiquidacionesUiState> = _uiState.asStateFlow()
+    /** Fijas para la vida del ViewModel (no dependen de ningún repositorio): siempre visibles, incluso en Cargando/Error/Vacio. */
+    val semanaInicio: LocalDate = semanaMostrada
+    val fechaPago: LocalDate = CicloSemanal.fechaDePago(semanaMostrada)
+
+    private val _uiState = MutableStateFlow<UiState<LiquidacionesUiState>>(UiState.Cargando)
+    val uiState: StateFlow<UiState<LiquidacionesUiState>> = _uiState.asStateFlow()
+
+    private val _generando = MutableStateFlow(false)
+    val generando: StateFlow<Boolean> = _generando.asStateFlow()
+
+    /** Mensaje de éxito/error de `onGenerarClick`, separado de [uiState]: un fallo al regenerar no debe reemplazar la lista ya cargada por una pantalla de Error. */
+    private val _mensaje = MutableStateFlow<String?>(null)
+    val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
 
     init {
         val hoy = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val yaSePuedePagar = hoy >= CicloSemanal.fechaDePago(semanaMostrada)
-        scope.launch { cargar(generarSiFalta = yaSePuedePagar, automatica = true) }
+        scope.launch {
+            try {
+                val resumenes = cargar(generarSiFalta = yaSePuedePagar, automatica = true)
+                _uiState.value = aUiState(resumenes)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.error(TAG, "Error al cargar liquidaciones", error)
+                _uiState.value = UiState.Error("No se pudo cargar la información")
+            }
+        }
     }
 
     fun onGenerarClick() {
         scope.launch {
-            _uiState.value = _uiState.value.copy(generando = true, mensaje = null)
-            cargar(generarSiFalta = true, automatica = false)
-            _uiState.value = _uiState.value.copy(generando = false, mensaje = "Liquidaciones de la semana actualizadas")
+            _generando.value = true
+            _mensaje.value = null
+            try {
+                val resumenes = cargar(generarSiFalta = true, automatica = false)
+                _uiState.value = aUiState(resumenes)
+                _mensaje.value = "Liquidaciones de la semana actualizadas"
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.error(TAG, "Error al generar liquidaciones", error)
+                _mensaje.value = "No se pudo generar la liquidación. Intenta nuevamente."
+            } finally {
+                _generando.value = false
+            }
         }
     }
 
-    private suspend fun cargar(generarSiFalta: Boolean, automatica: Boolean) {
+    private fun aUiState(resumenes: List<LiquidacionResumen>): UiState<LiquidacionesUiState> =
+        if (resumenes.isEmpty()) UiState.Vacio else UiState.Exito(LiquidacionesUiState(resumenes = resumenes))
+
+    private suspend fun cargar(generarSiFalta: Boolean, automatica: Boolean): List<LiquidacionResumen> {
         val proveedoresActivos = proveedorRepository.observarProveedores().first().filter { it.activo }
-        val resumenes = proveedoresActivos.map { proveedor ->
+        return proveedoresActivos.map { proveedor ->
             val liquidacion = liquidacionRepository.buscar(proveedorId = proveedor.id, semanaInicio = semanaMostrada)
                 ?: if (generarSiFalta) generarPara(proveedorId = proveedor.id, automatica = automatica) else null
             LiquidacionResumen(
@@ -83,7 +120,6 @@ class LiquidacionesViewModel(
                 generada = liquidacion != null,
             )
         }
-        _uiState.value = _uiState.value.copy(resumenes = resumenes)
     }
 
     private suspend fun generarPara(proveedorId: String, automatica: Boolean): Liquidacion {
@@ -127,5 +163,9 @@ class LiquidacionesViewModel(
         entregas.forEach { entrega ->
             entregaRepository.registrar(entrega.copy(estado = EstadoEntrega.Liquidada(liquidacionId = liquidacionId)))
         }
+    }
+
+    private companion object {
+        const val TAG = "LiquidacionesViewModel"
     }
 }
