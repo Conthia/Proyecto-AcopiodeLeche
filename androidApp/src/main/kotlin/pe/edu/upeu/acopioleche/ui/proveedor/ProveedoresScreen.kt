@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,9 +43,14 @@ import pe.edu.upeu.acopioleche.di.ServiceLocator
 import pe.edu.upeu.acopioleche.domain.model.CalificacionProveedor
 import pe.edu.upeu.acopioleche.domain.model.Proveedor
 import pe.edu.upeu.acopioleche.domain.model.Sector
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.presentation.proveedor.ProveedorConEntregas
+import pe.edu.upeu.acopioleche.presentation.proveedor.ProveedoresUiState
 import pe.edu.upeu.acopioleche.presentation.proveedor.ProveedoresViewModel
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
+import pe.edu.upeu.acopioleche.ui.components.EstadoCargando
+import pe.edu.upeu.acopioleche.ui.components.EstadoError
+import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.theme.FondoPantalla
 import pe.edu.upeu.acopioleche.ui.theme.RojoAlerta
 import pe.edu.upeu.acopioleche.ui.theme.TextoSecundario
@@ -72,35 +78,43 @@ fun ProveedoresScreen() {
         topBar = { AppTopBar(titulo = "Proveedores", subtitulo = "Padrón distrital") },
         containerColor = FondoPantalla,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "${uiState.proveedores.size} registrados", style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
-                    Button(
-                        onClick = { mostrarDialogoNuevo = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
-                    ) { Text("+ Nuevo proveedor") }
-                }
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                val cantidadTexto = (uiState as? UiState.Exito<ProveedoresUiState>)?.datos?.proveedores?.size?.let { "$it registrados" } ?: ""
+                Text(text = cantidadTexto, style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
+                Button(
+                    onClick = { mostrarDialogoNuevo = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
+                ) { Text("+ Nuevo proveedor") }
             }
             mensajeNotificacion?.let { msg ->
-                item {
-                    Text(
-                        text = msg,
-                        color = VerdeOscuro,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 4.dp),
-                    )
-                }
-            }
-            items(uiState.proveedores) { proveedor ->
-                ProveedorRow(
-                    proveedor = proveedor,
-                    alEditar = { proveedorAEditar = proveedor },
-                    alEliminar = { proveedorAEliminar = proveedor },
+                Text(
+                    text = msg,
+                    color = VerdeOscuro,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 4.dp),
                 )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            when (val estado = uiState) {
+                UiState.Cargando -> EstadoCargando(modifier = Modifier.weight(1f))
+                UiState.Vacio -> EstadoVacio(
+                    mensaje = "No hay proveedores registrados. Usa '+ Nuevo proveedor' para agregar el primero.",
+                    modifier = Modifier.weight(1f),
+                )
+                is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.weight(1f))
+                is UiState.Exito -> LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(estado.datos.proveedores) { proveedor ->
+                        ProveedorRow(
+                            proveedor = proveedor,
+                            alEditar = { proveedorAEditar = proveedor },
+                            alEliminar = { proveedorAEliminar = proveedor },
+                        )
+                    }
+                }
             }
         }
 
