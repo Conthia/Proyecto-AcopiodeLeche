@@ -14,7 +14,11 @@ interface EntregaRepository {
 
     fun observarPendientesDeSincronizar(): Flow<List<Entrega>>
 
-    /** Volumen total (litros) de cada uno de los últimos 7 días, de lunes a domingo. */
+    /**
+     * Volumen total (litros) por día de la semana calendario actual (lunes a domingo, índice 0 =
+     * lunes), con 0.0 en los días sin entregas registradas (incluidos los días futuros de la
+     * semana en curso, que todavía no tienen entregas).
+     */
     fun observarVolumenUltimaSemana(): Flow<List<Double>>
 
     suspend fun registrar(entrega: Entrega)

@@ -56,3 +56,10 @@ UPDATE EntregaEntity SET sincronizada = 1 WHERE sincronizada = 0;
 
 contarFilas:
 SELECT COUNT(*) FROM EntregaEntity;
+
+-- fecha se guarda como texto ISO-8601 (yyyy-MM-dd, ver Entrega.fecha.toString()), que ordena
+-- lexicográficamente igual que cronológicamente, así que BETWEEN funciona sin conversión.
+sumaVolumenPorFecha:
+SELECT fecha, SUM(volumenLitros) AS totalLitros FROM EntregaEntity
+WHERE fecha BETWEEN ? AND ?
+GROUP BY fecha;
