@@ -10,4 +10,8 @@ object AppLogger {
     fun error(tag: String, mensaje: String, throwable: Throwable) {
         println("[$tag] $mensaje: ${throwable::class.simpleName}: ${throwable.message}")
     }
+
+    fun warn(tag: String, mensaje: String) {
+        println("[$tag] $mensaje")
+    }
 }

@@ -8,6 +8,7 @@ CREATE TABLE LiquidacionEntity (
     tieneSancionPendienteDeMonto INTEGER NOT NULL,
     fechaPago TEXT NOT NULL,
     generadaAutomaticamente INTEGER NOT NULL,
+    precioPorLitroAplicado REAL NOT NULL DEFAULT 1.70,
     UNIQUE (proveedorId, semanaInicio)
 );
 
@@ -21,5 +22,5 @@ selectDeProveedorYSemana:
 SELECT * FROM LiquidacionEntity WHERE proveedorId = ? AND semanaInicio = ?;
 
 insertar:
-INSERT OR REPLACE INTO LiquidacionEntity(id, proveedorId, semanaInicio, litrosAceptados, montoBruto, montoFinal, tieneSancionPendienteDeMonto, fechaPago, generadaAutomaticamente)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO LiquidacionEntity(id, proveedorId, semanaInicio, litrosAceptados, montoBruto, montoFinal, tieneSancionPendienteDeMonto, fechaPago, generadaAutomaticamente, precioPorLitroAplicado)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

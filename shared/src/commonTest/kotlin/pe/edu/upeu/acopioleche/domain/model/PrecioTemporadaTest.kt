@@ -25,8 +25,8 @@ class PrecioTemporadaTest {
             val precioLluvias = repository.obtenerPrecioVigenteEn(fechaLluvias)
             val precioEstiaje = repository.obtenerPrecioVigenteEn(fechaEstiaje)
 
-            assertEquals(1.60, precioLluvias)
-            assertEquals(1.90, precioEstiaje)
+            assertEquals(1.60, precioLluvias.precioPorLitro)
+            assertEquals(1.90, precioEstiaje.precioPorLitro)
         }
     }
 
@@ -37,7 +37,8 @@ class PrecioTemporadaTest {
             val fechaSinTarifa = LocalDate(2028, 1, 1)
 
             val precioFallback = repository.obtenerPrecioVigenteEn(fechaSinTarifa)
-            assertEquals(FakePrecioTemporadaRepository.PRECIO_BASE_FALLBACK, precioFallback)
+            assertEquals(CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO, precioFallback.precioPorLitro)
+            assertEquals(true, precioFallback.esRespaldo)
         }
     }
 

@@ -60,6 +60,7 @@ fun LiquidacionesScreen(
             sancionRepository = ServiceLocator.sancionRepository,
             liquidacionRepository = ServiceLocator.liquidacionRepository,
             notificacionRepository = ServiceLocator.notificacionRepository,
+            precioTemporadaRepository = ServiceLocator.precioTemporadaRepository,
         )
     }
     val uiState by viewModel.uiState.collectAsState()

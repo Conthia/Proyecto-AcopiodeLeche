@@ -1,0 +1,15 @@
+-- Migración v3 -> v4. Agrega LiquidacionEntity.precioPorLitroAplicado: el precio por litro
+-- realmente usado al calcular cada liquidación, para que una liquidación ya generada no
+-- cambie de monto retroactivamente si después se agrega o edita un PrecioTemporada que
+-- hubiera aplicado a esa semana (ver domain/model/Liquidacion.kt).
+--
+-- DEFAULT 1.70 (CalculadoraLiquidacion.PRECIO_REFERENCIA_POR_LITRO): todas las liquidaciones
+-- generadas antes de esta migración se calcularon con ese precio fijo (LiquidacionesViewModel
+-- todavía no consultaba PrecioTemporadaRepository), así que es el valor correcto para las
+-- filas existentes, no un relleno arbitrario.
+--
+-- Este archivo es NUEVO -- no se edita 1.sqm ni 2.sqm. Ver la advertencia en esos dos
+-- archivos sobre por qué editar un .sqm ya publicado rompe la detección de versión en
+-- dispositivos que ya llegaron a esa versión de esquema.
+
+ALTER TABLE LiquidacionEntity ADD COLUMN precioPorLitroAplicado REAL NOT NULL DEFAULT 1.70;

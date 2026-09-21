@@ -17,6 +17,16 @@ object CalculadoraLiquidacion {
     // Valor propuesto mientras se confirma.
     const val PORCENTAJE_REDUCCION_POR_ADULTERACION_LEVE: Double = 0.15
 
+    /**
+     * Fecha que decide qué [pe.edu.upeu.acopioleche.domain.model.PrecioTemporada] aplica a una
+     * semana de liquidación. **PROVISIONAL, no confirmado con el cliente** (ver PENDIENTES.md):
+     * de las tres opciones evaluadas — fecha de cada entrega, inicio del ciclo, fecha de pago —
+     * se eligió el inicio del ciclo (`semanaInicio`) porque no exige romper `litrosAceptados` en
+     * un único `Double` por semana. Tanto `LiquidacionesViewModel` como `PagosHomeViewModel`
+     * pasan por aquí, así que cambiar la opción elegida es modificar esta única línea.
+     */
+    fun fechaReferenciaPrecio(semanaInicio: LocalDate): LocalDate = semanaInicio
+
     fun calcular(
         id: String,
         proveedorId: String,
@@ -46,6 +56,7 @@ object CalculadoraLiquidacion {
             tieneSancionPendienteDeMonto = tieneSancionReduccionPendiente,
             fechaPago = CicloSemanal.fechaDePago(semanaInicio),
             generadaAutomaticamente = generadaAutomaticamente,
+            precioPorLitroAplicado = precioPorLitroVigente,
         )
     }
 }
