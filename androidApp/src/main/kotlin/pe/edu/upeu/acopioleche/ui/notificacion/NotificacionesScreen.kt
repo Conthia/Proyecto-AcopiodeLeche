@@ -25,10 +25,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pe.edu.upeu.acopioleche.di.ServiceLocator
 import pe.edu.upeu.acopioleche.domain.model.TipoNotificacion
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.presentation.notificacion.NotificacionResumen
+import pe.edu.upeu.acopioleche.presentation.notificacion.NotificacionesUiState
 import pe.edu.upeu.acopioleche.presentation.notificacion.NotificacionesViewModel
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
 import pe.edu.upeu.acopioleche.ui.components.EstadoBadge
+import pe.edu.upeu.acopioleche.ui.components.EstadoCargando
+import pe.edu.upeu.acopioleche.ui.components.EstadoError
+import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.components.TopBarChip
 import pe.edu.upeu.acopioleche.ui.theme.AmbarFondo
 import pe.edu.upeu.acopioleche.ui.theme.AmbarTexto
@@ -51,6 +56,7 @@ fun NotificacionesScreen(
         )
     }
     val uiState by viewModel.uiState.collectAsState()
+    val exito = uiState as? UiState.Exito<NotificacionesUiState>
 
     Scaffold(
         topBar = {
@@ -58,17 +64,25 @@ fun NotificacionesScreen(
                 titulo = "Notificaciones",
                 subtitulo = "Avisos enviados a proveedores",
                 alVolver = alVolver,
-                accesorio = { TopBarChip(texto = "${uiState.numeroNoLeidas} sin leer") },
+                accesorio = { TopBarChip(texto = "${exito?.datos?.numeroNoLeidas ?: 0} sin leer") },
             )
         },
         containerColor = FondoPantalla,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(uiState.notificaciones) { notificacion ->
-                NotificacionRow(notificacion = notificacion, alTocar = { viewModel.onMarcarLeidaClick(notificacion.id) })
+        when (val estado = uiState) {
+            UiState.Cargando -> EstadoCargando(modifier = Modifier.fillMaxSize().padding(padding))
+            UiState.Vacio -> EstadoVacio(
+                mensaje = "No hay notificaciones registradas.",
+                modifier = Modifier.fillMaxSize().padding(padding),
+            )
+            is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.fillMaxSize().padding(padding))
+            is UiState.Exito -> LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(estado.datos.notificaciones) { notificacion ->
+                    NotificacionRow(notificacion = notificacion, alTocar = { viewModel.onMarcarLeidaClick(notificacion.id) })
+                }
             }
         }
     }
