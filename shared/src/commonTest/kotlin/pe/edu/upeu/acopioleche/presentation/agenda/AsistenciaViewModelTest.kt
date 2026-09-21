@@ -48,8 +48,10 @@ class AsistenciaViewModelTest {
     }
 
     @Test
-    fun `uiState es Vacio cuando la reunion no tiene convocados`() = runBlocking {
+    fun `uiState es Exito con lista de convocados vacia cuando la reunion no tiene convocados`() = runBlocking {
         // R-07 existe en FakeReunionRepository pero no tiene registros en FakeAsistenciaRepository.
+        // 0 convocados no es Vacio: la tarjeta de la reunion (tema/fecha/lugar) sigue siendo
+        // informacion propia de la pantalla, asi que el estado correcto es Exito con la lista vacia.
         val viewModel = AsistenciaViewModel(
             scope = CoroutineScope(Dispatchers.Unconfined),
             asistenciaRepository = FakeAsistenciaRepository(),
@@ -58,7 +60,10 @@ class AsistenciaViewModelTest {
             reunionId = "R-07",
         )
 
-        assertEquals(expected = UiState.Vacio, actual = viewModel.uiState.value)
+        val estado = viewModel.uiState.value
+        assertIs<UiState.Exito<AsistenciaUiState>>(estado)
+        assertTrue(estado.datos.convocados.isEmpty())
+        assertTrue(estado.datos.temaReunion.isNotEmpty())
     }
 
     @Test
@@ -70,6 +75,42 @@ class AsistenciaViewModelTest {
             reunionRepository = FakeReunionRepository(),
             reunionId = "R-08",
         )
+
+        val estado = viewModel.uiState.value
+        assertIs<UiState.Error>(estado)
+        assertEquals(expected = "No se pudo cargar la información", actual = estado.mensaje)
+    }
+
+    @Test
+    fun `los mutadores no cambian el estado ni lanzan excepcion si uiState es Cargando`() {
+        val viewModel = AsistenciaViewModel(
+            scope = CoroutineScope(Dispatchers.Unconfined),
+            asistenciaRepository = FakeAsistenciaRepository(),
+            proveedorRepository = FakeProveedorRepository(),
+            reunionRepository = ReunionRepositoryQueNuncaEmite(),
+            reunionId = "R-08",
+        )
+
+        viewModel.onToggleConvocado(actorId = "P-014")
+        viewModel.onEscanearQr()
+        viewModel.onCerrarActa()
+
+        assertEquals(expected = UiState.Cargando, actual = viewModel.uiState.value)
+    }
+
+    @Test
+    fun `los mutadores no cambian el estado ni lanzan excepcion si uiState es Error`() = runBlocking {
+        val viewModel = AsistenciaViewModel(
+            scope = CoroutineScope(Dispatchers.Unconfined),
+            asistenciaRepository = AsistenciaRepositoryQueFalla(),
+            proveedorRepository = FakeProveedorRepository(),
+            reunionRepository = FakeReunionRepository(),
+            reunionId = "R-08",
+        )
+
+        viewModel.onToggleConvocado(actorId = "P-014")
+        viewModel.onEscanearQr()
+        viewModel.onCerrarActa()
 
         val estado = viewModel.uiState.value
         assertIs<UiState.Error>(estado)

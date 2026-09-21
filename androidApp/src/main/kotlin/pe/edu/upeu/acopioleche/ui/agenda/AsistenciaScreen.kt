@@ -33,6 +33,7 @@ import pe.edu.upeu.acopioleche.ui.components.EstadoError
 import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.components.SectionLabel
 import pe.edu.upeu.acopioleche.ui.theme.FondoPantalla
+import pe.edu.upeu.acopioleche.ui.theme.TextoSecundario
 import pe.edu.upeu.acopioleche.ui.theme.VerdeOscuro
 
 @Composable
@@ -63,6 +64,7 @@ fun AsistenciaScreen(reunionId: String, alVolver: () -> Unit) {
             is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.fillMaxSize().padding(padding))
             is UiState.Exito -> {
                 val datos = estado.datos
+                val hayConvocados = datos.convocados.isNotEmpty()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -80,7 +82,7 @@ fun AsistenciaScreen(reunionId: String, alVolver: () -> Unit) {
                                 text = "Escanear el QR del proveedor marca su asistencia.",
                                 style = MaterialTheme.typography.bodyMedium,
                             )
-                            OutlinedButton(onClick = { viewModel.onEscanearQr() }) { Text("Escanear QR") }
+                            OutlinedButton(onClick = { viewModel.onEscanearQr() }, enabled = hayConvocados) { Text("Escanear QR") }
                         }
                     }
                     item {
@@ -93,12 +95,23 @@ fun AsistenciaScreen(reunionId: String, alVolver: () -> Unit) {
                             )
                         }
                     }
-                    items(datos.convocados) { convocado ->
-                        ConvocadoRow(convocado = convocado, alTocar = { viewModel.onToggleConvocado(convocado.actorId) })
+                    if (hayConvocados) {
+                        items(datos.convocados) { convocado ->
+                            ConvocadoRow(convocado = convocado, alTocar = { viewModel.onToggleConvocado(convocado.actorId) })
+                        }
+                    } else {
+                        item {
+                            Text(
+                                text = "Aún no hay convocados",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextoSecundario,
+                            )
+                        }
                     }
                     item {
                         Button(
                             onClick = { viewModel.onCerrarActa(); alVolver() },
+                            enabled = hayConvocados,
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
                         ) { Text("Cerrar acta de asistencia") }

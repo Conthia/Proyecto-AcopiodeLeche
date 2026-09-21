@@ -50,9 +50,7 @@ class AsistenciaViewModel(
                     },
                 )
             }
-                .map<AsistenciaUiState, UiState<AsistenciaUiState>> { estado ->
-                    if (estado.convocados.isEmpty()) UiState.Vacio else UiState.Exito(estado)
-                }
+                .map<AsistenciaUiState, UiState<AsistenciaUiState>> { estado -> UiState.Exito(estado) }
                 .catch { error ->
                     AppLogger.error(TAG, "Error al observar asistencia", error)
                     emit(UiState.Error("No se pudo cargar la información"))
