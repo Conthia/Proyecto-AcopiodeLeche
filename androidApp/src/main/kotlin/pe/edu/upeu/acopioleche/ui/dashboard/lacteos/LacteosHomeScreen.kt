@@ -1,6 +1,7 @@
 package pe.edu.upeu.acopioleche.ui.dashboard.lacteos
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +44,8 @@ import pe.edu.upeu.acopioleche.di.ServiceLocator
 import pe.edu.upeu.acopioleche.di.SesionActivaHolder
 import pe.edu.upeu.acopioleche.domain.model.InsumoLacteo
 import pe.edu.upeu.acopioleche.domain.model.ProduccionDerivado
+import pe.edu.upeu.acopioleche.presentation.core.UiState
+import pe.edu.upeu.acopioleche.presentation.dashboard.lacteos.LacteosHomeUiState
 import pe.edu.upeu.acopioleche.presentation.dashboard.lacteos.LacteosHomeViewModel
 import pe.edu.upeu.acopioleche.ui.components.AppCard
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
@@ -72,6 +76,8 @@ fun LacteosHomeScreen(
         )
     }
     val uiState by viewModel.uiState.collectAsState()
+    val exito = uiState as? UiState.Exito<LacteosHomeUiState>
+    var mensajeNotificacion by remember { mutableStateOf<String?>(null) }
 
     var mostrarDialogoNuevoDerivado by remember { mutableStateOf(false) }
     var derivadoAEditar by remember { mutableStateOf<ProduccionDerivado?>(null) }
@@ -82,7 +88,7 @@ fun LacteosHomeScreen(
         topBar = {
             AppTopBar(
                 titulo = "Procesamiento de Lácteos",
-                subtitulo = "Planta · ${uiState.nombreResponsable}",
+                subtitulo = "Planta · ${sesionActiva.nombreCompleto}",
                 alAbrirPerfil = alAbrirPerfil,
             )
         },
@@ -99,13 +105,13 @@ fun LacteosHomeScreen(
                 AppCard {
                     SectionLabel(texto = "Resumen de Planta y Derivados")
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        StatTile(valor = "${uiState.producciones.size}", etiqueta = "lotes producidos", modifier = Modifier.weight(1f))
-                        StatTile(valor = "${uiState.insumos.size}", etiqueta = "insumos registrados", modifier = Modifier.weight(1f))
+                        StatTile(valor = "${exito?.datos?.producciones?.size ?: 0}", etiqueta = "lotes producidos", modifier = Modifier.weight(1f))
+                        StatTile(valor = "${exito?.datos?.insumos?.size ?: 0}", etiqueta = "insumos registrados", modifier = Modifier.weight(1f))
                     }
                 }
             }
 
-            uiState.mensajeNotificacion?.let { msg ->
+            mensajeNotificacion?.let { msg ->
                 item { Text(text = msg, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium) }
             }
 
@@ -126,33 +132,52 @@ fun LacteosHomeScreen(
                 }
             }
 
-            items(uiState.producciones) { p ->
-                AppCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(text = p.tipoProducto, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                text = "Lote: ${p.codigoLote} · ${p.fechaProduccion}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextoSecundario,
-                            )
-                        }
-                        EstadoBadge(texto = "${p.cantidadUnidades.toInt()} unidades", color = VerdeOscuro, colorFondo = VerdeSuaveFondo)
+            when (val estado = uiState) {
+                UiState.Cargando -> item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = VerdeOscuro)
                     }
-                    HorizontalDivider()
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        IconButton(onClick = { derivadoAEditar = p }) {
-                            Icon(imageVector = Icons.Filled.Edit, contentDescription = "Editar", tint = VerdeOscuro)
-                        }
-                        IconButton(onClick = { viewModel.eliminarProduccion(p.id) }) {
-                            Icon(imageVector = Icons.Filled.Delete, contentDescription = "Eliminar", tint = RojoAlerta)
+                }
+                UiState.Vacio -> item {
+                    Text(
+                        text = "No hay lotes de producción ni insumos registrados.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextoSecundario,
+                    )
+                }
+                is UiState.Error -> item {
+                    Text(text = estado.mensaje, style = MaterialTheme.typography.bodyMedium, color = RojoAlerta)
+                }
+                is UiState.Exito -> {
+                    items(estado.datos.producciones) { p ->
+                        AppCard {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column {
+                                    Text(text = p.tipoProducto, style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        text = "Lote: ${p.codigoLote} · ${p.fechaProduccion}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextoSecundario,
+                                    )
+                                }
+                                EstadoBadge(texto = "${p.cantidadUnidades.toInt()} unidades", color = VerdeOscuro, colorFondo = VerdeSuaveFondo)
+                            }
+                            HorizontalDivider()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                IconButton(onClick = { derivadoAEditar = p }) {
+                                    Icon(imageVector = Icons.Filled.Edit, contentDescription = "Editar", tint = VerdeOscuro)
+                                }
+                                IconButton(onClick = { viewModel.eliminarProduccion(p.id); mensajeNotificacion = "Lote de producción eliminado." }) {
+                                    Icon(imageVector = Icons.Filled.Delete, contentDescription = "Eliminar", tint = RojoAlerta)
+                                }
+                            }
                         }
                     }
                 }
@@ -175,33 +200,35 @@ fun LacteosHomeScreen(
                 }
             }
 
-            items(uiState.insumos) { insumo ->
-                AppCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(text = insumo.nombreInsumo, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                text = "Ingreso: ${insumo.fechaIngreso}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextoSecundario,
-                            )
+            exito?.datos?.insumos?.let { insumos ->
+                items(insumos) { insumo ->
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text(text = insumo.nombreInsumo, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    text = "Ingreso: ${insumo.fechaIngreso}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextoSecundario,
+                                )
+                            }
+                            EstadoBadge(texto = "${insumo.cantidad} ${insumo.unidadMedida}", color = VerdeOscuro, colorFondo = VerdeSuaveFondo)
                         }
-                        EstadoBadge(texto = "${insumo.cantidad} ${insumo.unidadMedida}", color = VerdeOscuro, colorFondo = VerdeSuaveFondo)
-                    }
-                    HorizontalDivider()
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        IconButton(onClick = { insumoAEditar = insumo }) {
-                            Icon(imageVector = Icons.Filled.Edit, contentDescription = "Editar", tint = VerdeOscuro)
-                        }
-                        IconButton(onClick = { viewModel.eliminarInsumo(insumo.id) }) {
-                            Icon(imageVector = Icons.Filled.Delete, contentDescription = "Eliminar", tint = RojoAlerta)
+                        HorizontalDivider()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            IconButton(onClick = { insumoAEditar = insumo }) {
+                                Icon(imageVector = Icons.Filled.Edit, contentDescription = "Editar", tint = VerdeOscuro)
+                            }
+                            IconButton(onClick = { viewModel.eliminarInsumo(insumo.id); mensajeNotificacion = "Registro de insumo eliminado." }) {
+                                Icon(imageVector = Icons.Filled.Delete, contentDescription = "Eliminar", tint = RojoAlerta)
+                            }
                         }
                     }
                 }
@@ -274,6 +301,7 @@ fun LacteosHomeScreen(
                                 responsableId = sesionActiva.usuarioId,
                             )
                             viewModel.registrarProduccion(objeto)
+                            mensajeNotificacion = "Lote '${objeto.codigoLote}' (${objeto.tipoProducto}) registrado correctamente."
                             mostrarDialogoNuevoDerivado = false
                             derivadoAEditar = null
                         },
@@ -351,6 +379,7 @@ fun LacteosHomeScreen(
                                 fechaIngreso = fIng,
                             )
                             viewModel.registrarInsumo(objeto)
+                            mensajeNotificacion = "Insumo '${objeto.nombreInsumo}' (${objeto.cantidad} ${objeto.unidadMedida}) registrado."
                             mostrarDialogoNuevoInsumo = false
                             insumoAEditar = null
                         },
