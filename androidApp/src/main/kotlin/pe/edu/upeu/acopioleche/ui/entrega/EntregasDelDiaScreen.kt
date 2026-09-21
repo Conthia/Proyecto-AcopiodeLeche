@@ -35,10 +35,14 @@ import pe.edu.upeu.acopioleche.di.ServiceLocator
 import pe.edu.upeu.acopioleche.di.SesionActivaHolder
 import pe.edu.upeu.acopioleche.domain.model.Turno
 import pe.edu.upeu.acopioleche.presentation.core.EntregaResumen
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.presentation.entrega.EntregasDelDiaViewModel
 import pe.edu.upeu.acopioleche.ui.components.AppCard
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
 import pe.edu.upeu.acopioleche.ui.components.EntregaRow
+import pe.edu.upeu.acopioleche.ui.components.EstadoCargando
+import pe.edu.upeu.acopioleche.ui.components.EstadoError
+import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.components.StatTile
 import pe.edu.upeu.acopioleche.ui.theme.FondoPantalla
 import pe.edu.upeu.acopioleche.ui.theme.RojoAlerta
@@ -74,35 +78,46 @@ fun EntregasDelDiaScreen(alVolver: () -> Unit) {
         },
         containerColor = FondoPantalla,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                AppCard {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        StatTile(
-                            valor = "${uiState.totalLitros}",
-                            etiqueta = "litros · turno",
-                            modifier = Modifier.weight(1f),
-                        )
-                        StatTile(
-                            valor = "${uiState.numeroProveedoresAtendidos}",
-                            etiqueta = "proveedores atendidos",
-                            modifier = Modifier.weight(1f),
+        when (val estado = uiState) {
+            UiState.Cargando -> EstadoCargando(modifier = Modifier.fillMaxSize().padding(padding))
+            UiState.Vacio -> EstadoVacio(
+                mensaje = "No hay entregas registradas hoy.",
+                modifier = Modifier.fillMaxSize().padding(padding),
+            )
+            is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.fillMaxSize().padding(padding))
+            is UiState.Exito -> {
+                val datos = estado.datos
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item {
+                        AppCard {
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                StatTile(
+                                    valor = "${datos.totalLitros}",
+                                    etiqueta = "litros · turno",
+                                    modifier = Modifier.weight(1f),
+                                )
+                                StatTile(
+                                    valor = "${datos.numeroProveedoresAtendidos}",
+                                    etiqueta = "proveedores atendidos",
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                    mensajeNotificacion?.let { msg ->
+                        item { Text(text = msg, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium) }
+                    }
+                    items(datos.entregas) { entrega ->
+                        EntregaRow(
+                            entrega = entrega,
+                            alEditar = { entregaAEditar = entrega },
+                            alCancelar = { entregaACancelar = entrega },
                         )
                     }
                 }
-            }
-            mensajeNotificacion?.let { msg ->
-                item { Text(text = msg, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium) }
-            }
-            items(uiState.entregas) { entrega ->
-                EntregaRow(
-                    entrega = entrega,
-                    alEditar = { entregaAEditar = entrega },
-                    alCancelar = { entregaACancelar = entrega },
-                )
             }
         }
 

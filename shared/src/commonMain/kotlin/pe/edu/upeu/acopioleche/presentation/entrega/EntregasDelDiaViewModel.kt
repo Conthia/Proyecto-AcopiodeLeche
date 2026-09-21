@@ -4,8 +4,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -14,7 +16,9 @@ import pe.edu.upeu.acopioleche.domain.model.EstadoEntrega
 import pe.edu.upeu.acopioleche.domain.repository.AnalisisCalidadRepository
 import pe.edu.upeu.acopioleche.domain.repository.EntregaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
+import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.presentation.core.aResumen
 
 class EntregasDelDiaViewModel(
@@ -24,8 +28,8 @@ class EntregasDelDiaViewModel(
     private val analisisCalidadRepository: AnalisisCalidadRepository,
 ) : AppViewModel(scope = scope) {
 
-    private val _uiState = MutableStateFlow(EntregasDelDiaUiState())
-    val uiState: StateFlow<EntregasDelDiaUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<UiState<EntregasDelDiaUiState>>(UiState.Cargando)
+    val uiState: StateFlow<UiState<EntregasDelDiaUiState>> = _uiState.asStateFlow()
 
     init {
         scope.launch {
@@ -45,7 +49,15 @@ class EntregasDelDiaViewModel(
                         )
                     },
                 )
-            }.collect { estado -> _uiState.value = estado }
+            }
+                .map<EntregasDelDiaUiState, UiState<EntregasDelDiaUiState>> { estado ->
+                    if (estado.entregas.isEmpty()) UiState.Vacio else UiState.Exito(estado)
+                }
+                .catch { error ->
+                    AppLogger.error(TAG, "Error al observar entregas del día", error)
+                    emit(UiState.Error("No se pudo cargar la información"))
+                }
+                .collect { estado -> _uiState.value = estado }
         }
     }
 
@@ -103,5 +115,9 @@ class EntregasDelDiaViewModel(
             entregaRepository.registrar(cancelada)
             alExito()
         }
+    }
+
+    private companion object {
+        const val TAG = "EntregasDelDiaViewModel"
     }
 }

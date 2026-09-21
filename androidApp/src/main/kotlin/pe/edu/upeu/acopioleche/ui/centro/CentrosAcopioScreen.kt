@@ -3,8 +3,10 @@ package pe.edu.upeu.acopioleche.ui.centro
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,8 +38,13 @@ import androidx.compose.ui.unit.dp
 import pe.edu.upeu.acopioleche.di.ServiceLocator
 import pe.edu.upeu.acopioleche.domain.model.CentroAcopio
 import pe.edu.upeu.acopioleche.presentation.centro.CentroConEstadisticas
+import pe.edu.upeu.acopioleche.presentation.centro.CentrosAcopioUiState
 import pe.edu.upeu.acopioleche.presentation.centro.CentrosAcopioViewModel
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
+import pe.edu.upeu.acopioleche.ui.components.EstadoCargando
+import pe.edu.upeu.acopioleche.ui.components.EstadoError
+import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.theme.FondoPantalla
 import pe.edu.upeu.acopioleche.ui.theme.RojoAlerta
 import pe.edu.upeu.acopioleche.ui.theme.TextoSecundario
@@ -55,6 +62,7 @@ fun CentrosAcopioScreen() {
         )
     }
     val uiState by viewModel.uiState.collectAsState()
+    val exito = uiState as? UiState.Exito<CentrosAcopioUiState>
 
     var mostrarDialogoNuevo by remember { mutableStateOf(false) }
     var centroAEditar by remember { mutableStateOf<CentroConEstadisticas?>(null) }
@@ -62,34 +70,41 @@ fun CentrosAcopioScreen() {
     var mensajeNotificacion by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        topBar = { AppTopBar(titulo = "Centros de acopio", subtitulo = "${uiState.numeroActivos} activos") },
+        topBar = { AppTopBar(titulo = "Centros de acopio", subtitulo = exito?.datos?.numeroActivos?.let { "$it activos" } ?: "") },
         containerColor = FondoPantalla,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "${uiState.centros.size} centros registrados", style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
-                    Button(
-                        onClick = { mostrarDialogoNuevo = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
-                    ) { Text("+ Nuevo centro") }
-                }
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = exito?.datos?.centros?.size?.let { "$it centros registrados" } ?: "", style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
+                Button(
+                    onClick = { mostrarDialogoNuevo = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
+                ) { Text("+ Nuevo centro") }
             }
             mensajeNotificacion?.let { msg ->
-                item {
-                    Text(text = msg, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium)
-                }
+                Text(text = msg, color = VerdeOscuro, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
             }
-            items(uiState.centros) { centro ->
-                CentroCard(
-                    centro = centro,
-                    alToggleActivo = { viewModel.toggleActivo(centro.id) },
-                    alEditar = { centroAEditar = centro },
-                    alEliminar = { centroAEliminar = centro },
+            Spacer(modifier = Modifier.height(12.dp))
+            when (val estado = uiState) {
+                UiState.Cargando -> EstadoCargando(modifier = Modifier.weight(1f))
+                UiState.Vacio -> EstadoVacio(
+                    mensaje = "No hay centros de acopio registrados. Usa '+ Nuevo centro' para agregar el primero.",
+                    modifier = Modifier.weight(1f),
                 )
+                is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.weight(1f))
+                is UiState.Exito -> LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(estado.datos.centros) { centro ->
+                        CentroCard(
+                            centro = centro,
+                            alToggleActivo = { viewModel.toggleActivo(centro.id) },
+                            alEditar = { centroAEditar = centro },
+                            alEliminar = { centroAEliminar = centro },
+                        )
+                    }
+                }
             }
         }
 

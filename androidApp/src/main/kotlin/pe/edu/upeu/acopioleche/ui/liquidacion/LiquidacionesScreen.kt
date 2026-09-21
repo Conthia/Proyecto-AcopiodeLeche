@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,11 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import pe.edu.upeu.acopioleche.di.ServiceLocator
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 import pe.edu.upeu.acopioleche.presentation.liquidacion.LiquidacionResumen
 import pe.edu.upeu.acopioleche.presentation.liquidacion.LiquidacionesViewModel
 import pe.edu.upeu.acopioleche.ui.components.AppCard
 import pe.edu.upeu.acopioleche.ui.components.AppTopBar
 import pe.edu.upeu.acopioleche.ui.components.EstadoBadge
+import pe.edu.upeu.acopioleche.ui.components.EstadoCargando
+import pe.edu.upeu.acopioleche.ui.components.EstadoError
+import pe.edu.upeu.acopioleche.ui.components.EstadoVacio
 import pe.edu.upeu.acopioleche.ui.components.SectionLabel
 import pe.edu.upeu.acopioleche.ui.theme.AmbarFondo
 import pe.edu.upeu.acopioleche.ui.theme.AmbarTexto
@@ -58,36 +63,52 @@ fun LiquidacionesScreen(
         )
     }
     val uiState by viewModel.uiState.collectAsState()
+    val generando by viewModel.generando.collectAsState()
+    val mensaje by viewModel.mensaje.collectAsState()
 
     Scaffold(
         topBar = {
             AppTopBar(
                 titulo = "Liquidaciones",
-                subtitulo = "Semana del ${uiState.semanaInicio} · se paga el ${uiState.fechaPago}",
+                subtitulo = "Semana del ${viewModel.semanaInicio} · se paga el ${viewModel.fechaPago}",
                 alVolver = alVolver,
             )
         },
         containerColor = FondoPantalla,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item {
-                Button(
-                    onClick = { viewModel.onGenerarClick() },
-                    enabled = !uiState.generando,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            Button(
+                onClick = { viewModel.onGenerarClick() },
+                enabled = !generando,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = VerdeOscuro, contentColor = Color.White),
+            ) {
+                Text(if (generando) "Generando…" else "Generar liquidaciones de esta semana")
+            }
+            mensaje?.let { msg ->
+                Text(
+                    text = msg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextoSecundario,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            when (val estado = uiState) {
+                UiState.Cargando -> EstadoCargando(modifier = Modifier.weight(1f))
+                UiState.Vacio -> EstadoVacio(
+                    mensaje = "No hay proveedores activos para liquidar esta semana.",
+                    modifier = Modifier.weight(1f),
+                )
+                is UiState.Error -> EstadoError(mensaje = estado.mensaje, modifier = Modifier.weight(1f))
+                is UiState.Exito -> LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text(if (uiState.generando) "Generando…" else "Generar liquidaciones de esta semana")
+                    item { SectionLabel(texto = "Proveedores activos · ${estado.datos.resumenes.size}") }
+                    items(estado.datos.resumenes) { resumen -> LiquidacionRow(resumen = resumen) }
                 }
             }
-            uiState.mensaje?.let { mensaje ->
-                item { Text(text = mensaje, style = MaterialTheme.typography.bodyMedium, color = TextoSecundario) }
-            }
-            item { SectionLabel(texto = "Proveedores activos · ${uiState.resumenes.size}") }
-            items(uiState.resumenes) { resumen -> LiquidacionRow(resumen = resumen) }
         }
     }
 }

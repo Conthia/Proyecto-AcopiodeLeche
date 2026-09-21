@@ -1,16 +1,12 @@
 package pe.edu.upeu.acopioleche.domain.model
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import pe.edu.upeu.acopioleche.data.fake.FakeInsumoRepository
 import pe.edu.upeu.acopioleche.data.fake.FakeProduccionDerivadoRepository
-import pe.edu.upeu.acopioleche.presentation.dashboard.lacteos.LacteosHomeViewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 class ProduccionLacteosTest {
@@ -62,25 +58,8 @@ class ProduccionLacteosTest {
         }
     }
 
-    @Test
-    fun lacteosHomeViewModel_observaProduccionEInsumos() {
-        runBlocking {
-            val repoProduccion = FakeProduccionDerivadoRepository()
-            val repoInsumos = FakeInsumoRepository()
-
-            val viewModel = LacteosHomeViewModel(
-                scope = CoroutineScope(Dispatchers.Unconfined),
-                produccionDerivadoRepository = repoProduccion,
-                insumoRepository = repoInsumos,
-                nombreResponsable = "Asoc. Procesadora Huata",
-            )
-
-            val state = viewModel.uiState.first { it.producciones.isNotEmpty() }
-            assertFalse(state.producciones.isEmpty())
-            assertFalse(state.insumos.isEmpty())
-            assertEquals("Asoc. Procesadora Huata", state.nombreResponsable)
-        }
-    }
+    // El wiring de LacteosHomeViewModel (Cargando/Exito/Vacio/Error) se prueba en
+    // presentation/dashboard/lacteos/LacteosHomeViewModelTest.kt.
 
     @Test
     fun produccionDerivado_y_InsumoLacteo_conservanCampos() {

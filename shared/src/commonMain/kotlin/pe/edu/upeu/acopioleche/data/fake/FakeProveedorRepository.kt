@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDateTime
 import pe.edu.upeu.acopioleche.domain.model.CalificacionProveedor
@@ -36,8 +35,12 @@ class FakeProveedorRepository : ProveedorRepository {
         _proveedores.value = _proveedores.value.filter { it.id != id }
     }
 
-    // Implementación en memoria: no participa en sincronización, no hay nada pendiente.
-    override fun observarPendientesDeSincronizar(): Flow<List<CambioPendiente<Proveedor>>> = emptyFlow()
+    // Implementación en memoria: no participa en sincronización, no hay nada pendiente. Debe
+    // EMITIR ese "nada pendiente" (no usar emptyFlow(), que no emite nunca) porque los
+    // ViewModel que combinan este Flow con otros (combine {}) no producen ningún valor hasta
+    // que todas las fuentes emitieron al menos una vez.
+    override fun observarPendientesDeSincronizar(): Flow<List<CambioPendiente<Proveedor>>> =
+        MutableStateFlow<List<CambioPendiente<Proveedor>>>(emptyList()).asStateFlow()
 
     override suspend fun marcarSincronizado(id: String, actualizadoEn: LocalDateTime) = Unit
 

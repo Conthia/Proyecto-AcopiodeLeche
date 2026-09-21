@@ -4,13 +4,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import pe.edu.upeu.acopioleche.domain.model.Proveedor
 import pe.edu.upeu.acopioleche.domain.repository.EntregaRepository
 import pe.edu.upeu.acopioleche.domain.repository.ProveedorRepository
+import pe.edu.upeu.acopioleche.presentation.core.AppLogger
 import pe.edu.upeu.acopioleche.presentation.core.AppViewModel
+import pe.edu.upeu.acopioleche.presentation.core.UiState
 
 class ProveedoresViewModel(
     scope: CoroutineScope,
@@ -18,8 +22,8 @@ class ProveedoresViewModel(
     private val entregaRepository: EntregaRepository,
 ) : AppViewModel(scope = scope) {
 
-    private val _uiState = MutableStateFlow(ProveedoresUiState())
-    val uiState: StateFlow<ProveedoresUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<UiState<ProveedoresUiState>>(UiState.Cargando)
+    val uiState: StateFlow<UiState<ProveedoresUiState>> = _uiState.asStateFlow()
 
     init {
         scope.launch {
@@ -46,7 +50,15 @@ class ProveedoresViewModel(
                         )
                     },
                 )
-            }.collect { estado -> _uiState.value = estado }
+            }
+                .map<ProveedoresUiState, UiState<ProveedoresUiState>> { estado ->
+                    if (estado.proveedores.isEmpty()) UiState.Vacio else UiState.Exito(estado)
+                }
+                .catch { error ->
+                    AppLogger.error(TAG, "Error al observar proveedores", error)
+                    emit(UiState.Error("No se pudo cargar la información"))
+                }
+                .collect { estado -> _uiState.value = estado }
         }
     }
 
@@ -71,5 +83,9 @@ class ProveedoresViewModel(
                 alEliminarDefinitivo()
             }
         }
+    }
+
+    private companion object {
+        const val TAG = "ProveedoresViewModel"
     }
 }
